@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 def dumb_AMR_format_to_datetime(date_str):
     try:
@@ -58,7 +58,7 @@ for file in excel_files:
 if all_dataframes:
     # Concatenate all dataframes
     combined_data = pd.concat(all_dataframes, ignore_index=True)
-    combined_data.rename(columns={'Unnamed: 0': 'Date'}, inplace=True)
+    combined_data.rename(columns={'Unnamed: 0': 'Date','ผลรวม': 'Load'}, inplace=True)
 
     # Save the combined data to a new CSV file
     combined_data.to_csv(os.path.join(output_files_dir, 'combined_data.csv'), index=False)

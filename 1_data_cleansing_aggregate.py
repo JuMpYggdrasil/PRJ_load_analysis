@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # date_format = '%d.%m.%Y %H:%M'
 date_format = '%d/%m/%Y %H.%M'
 #date_format ='ISO8601'
-data = pd.read_csv('CHF_2022_homer.csv', parse_dates=['Date'], date_format=date_format)
+data = pd.read_csv('combined_data.csv', parse_dates=['Date'], date_format=date_format)
 
 #data['Date'] = pd.to_datetime(data['Date'])
 data.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
