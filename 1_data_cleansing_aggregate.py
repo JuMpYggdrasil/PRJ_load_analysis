@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the historical data with the specified timestamp format
-date_format = '%d.%m.%Y %H:%M'
+# date_format = '%d.%m.%Y %H:%M'
+date_format = '%d/%m/%Y %H.%M'
 #date_format ='ISO8601'
 data = pd.read_csv('CHF_2022_homer.csv', parse_dates=['Date'], date_format=date_format)
 
