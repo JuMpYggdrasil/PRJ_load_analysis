@@ -24,8 +24,12 @@ df.dropna(inplace=True)
 # Select features for clustering
 features = df[['Load', 'hour', 'day_of_week', 'rolling_mean']]
 
+# # Apply K-means clustering
+# kmeans = KMeans(n_clusters=4, random_state=0)
+# df['cluster'] = kmeans.fit_predict(features)
 # Apply K-means clustering
-kmeans = KMeans(n_clusters=4, random_state=0)
+# Explicitly setting n_init to 10, which is the current default
+kmeans = KMeans(n_clusters=4, n_init=10, random_state=0)
 df['cluster'] = kmeans.fit_predict(features)
 
 # Plot the clusters
