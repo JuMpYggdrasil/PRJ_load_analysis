@@ -6,7 +6,7 @@ import seaborn as sns
 data = pd.read_csv('prepared_electric_load_data.csv', parse_dates=['timestamp'], index_col='timestamp')
 
 specific_1_day_mask = (data.index.dayofweek == 0) 
-specific_2_day_mask = (data.index.dayofweek >= 0) & (data.index.dayofweek < 6)
+specific_2_day_mask = (data.index.dayofweek >= 0) & (data.index.dayofweek < 1)
 specific_3_day_mask = (data.index.dayofweek == 6) 
 
 specific_1_day = data[specific_1_day_mask]
