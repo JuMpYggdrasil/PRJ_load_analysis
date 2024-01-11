@@ -23,6 +23,8 @@ data['load_lag2'] = data['load_lag2'].fillna(0)
 # Display basic statistics of the data
 print(data.describe())
 
+
+
 # Check for correlation between variables
 correlation_matrix = data.corr()
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
@@ -39,8 +41,9 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+sns.set_palette("bright")
 # Explore seasonality with a box plot
-sns.boxplot(x='month', y='load', data=data, showfliers = False)
+sns.boxplot(x='month', y='load', data=data, showfliers = False, palette='bright')
 plt.title('Seasonal Variation in Load')
 plt.xlabel('Month')
 plt.ylabel('Load')
@@ -48,7 +51,7 @@ plt.savefig("Seasonal.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
-sns.boxplot(x='month', y='load', data=specific_1_day, showfliers = False)
+sns.boxplot(x='month', y='load', data=specific_1_day, showfliers = False, palette='bright')
 plt.title('Seasonal Variation in Load of MON Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
@@ -56,7 +59,7 @@ plt.savefig("Seasonal_specific_1.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
-sns.boxplot(x='month', y='load', data=specific_2_day, showfliers = False)
+sns.boxplot(x='month', y='load', data=specific_2_day, showfliers = False, palette='bright')
 plt.title('Seasonal Variation in Load of MON-SAT Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
@@ -64,7 +67,7 @@ plt.savefig("Seasonal_specific_2.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
-sns.boxplot(x='month', y='load', data=specific_3_day, showfliers = False)
+sns.boxplot(x='month', y='load', data=specific_3_day, showfliers = False, palette='bright')
 plt.title('Seasonal Variation in Load of SUN Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
@@ -84,7 +87,7 @@ plt.grid(True)
 plt.show()
 
 # Explore day of the week patterns
-sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False)
+sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette='bright')
 plt.title('Load Variation by Day of the Week')
 plt.xlabel('Day of the Week')
 plt.ylabel('Load')

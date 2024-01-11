@@ -7,6 +7,7 @@ from datetime import timedelta
 # Set the directory where your Excel files are located
 excel_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis\source'
 output_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis'
+output_file_name = r'combined_data.csv'
 
 def dumb_AMR_format_to_datetime(date_str):
     try:
@@ -63,8 +64,10 @@ if all_dataframes:
     # Concatenate all dataframes
     combined_data = pd.concat(all_dataframes, ignore_index=True)
     combined_data.rename(columns={'Unnamed: 0': 'Date','ผลรวม': 'Load'}, inplace=True)
+    # Sort by 'Date'
+    combined_data.sort_values(by='Date', inplace=True)
 
     # Save the combined data to a new CSV file
-    combined_data.to_csv(os.path.join(output_files_dir, 'combined_data.csv'), index=False)
+    combined_data.to_csv(os.path.join(output_files_dir, output_file_name), index=False)
 else:
     print("No data to concatenate. Check if the files are available and correctly formatted.")
