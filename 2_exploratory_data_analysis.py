@@ -47,7 +47,7 @@ sns.boxplot(x='month', y='load', data=data, showfliers = False, palette='bright'
 plt.title('Seasonal Variation in Load')
 plt.xlabel('Month')
 plt.ylabel('Load')
-plt.savefig("Seasonal.png", format="png")
+plt.savefig("result/Seasonal.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
@@ -55,7 +55,7 @@ sns.boxplot(x='month', y='load', data=specific_1_day, showfliers = False, palett
 plt.title('Seasonal Variation in Load of MON Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
-plt.savefig("Seasonal_specific_1.png", format="png")
+plt.savefig("result/Seasonal_specific_1.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
@@ -63,7 +63,7 @@ sns.boxplot(x='month', y='load', data=specific_2_day, showfliers = False, palett
 plt.title('Seasonal Variation in Load of MON-SAT Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
-plt.savefig("Seasonal_specific_2.png", format="png")
+plt.savefig("result/Seasonal_specific_2.png", format="png")
 plt.show()
 
 # Explore seasonality with a box plot
@@ -71,7 +71,7 @@ sns.boxplot(x='month', y='load', data=specific_3_day, showfliers = False, palett
 plt.title('Seasonal Variation in Load of SUN Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
-plt.savefig("Seasonal_specific_3.png", format="png")
+plt.savefig("result/Seasonal_specific_3.png", format="png")
 plt.show()
 
 # Explore trends with a rolling mean
@@ -87,12 +87,12 @@ plt.grid(True)
 plt.show()
 
 # Explore day of the week patterns
-sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette='bright')
+sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette='bright', hue='day_of_week')
 plt.title('Load Variation by Day of the Week')
 plt.xlabel('Day of the Week')
 plt.ylabel('Load')
 plt.xticks(range(7), ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])  # Optional: Label days of the week
-plt.savefig("LoadVariation.png", format="png")
+plt.savefig("result/LoadVariation.png", format="png")
 plt.show()
 
 

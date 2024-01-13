@@ -1,12 +1,15 @@
 import pandas as pd
 import os
 from datetime import timedelta
+import openpyxl
 
 # create 1 year data (.csv) from 12 excel (.xlsx) files
 
 # Set the directory where your Excel files are located
-excel_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis\source'
-output_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis'
+excel_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis\source'
+output_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis'
+# excel_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis\source'
+# output_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis'
 output_file_name = r'combined_data.csv'
 
 def dumb_AMR_format_to_datetime(date_str):
@@ -48,13 +51,35 @@ excel_files.sort()
 for file in excel_files:
     file_path = os.path.join(excel_files_dir, file)
     try:
+        # Open the workbook and unmerge cells
+        workbook = openpyxl.load_workbook(file_path)
+        for sheet in workbook.worksheets:
+            # Create a list of all merged cells
+            merged_cells = [mc for mc in sheet.merged_cells.ranges]
+            # Unmerge all merged cells
+            for merged_cell in merged_cells:
+                sheet.unmerge_cells(str(merged_cell))
+        
+        # Save the unmerged workbook to a temporary file
+        temp_file_path = os.path.join(excel_files_dir, 'temp_unmerged.xlsx')
+        workbook.save(temp_file_path)
+
+
         # Attempt to read the Excel file
-        df = pd.read_excel(file_path, header=0, skiprows=5)
-        print(f"Header for {file}: {df.columns.tolist()}")  # Print the header
+        # Now read the unmerged Excel file into a Pandas DataFrame
+        df = pd.read_excel(temp_file_path, header=0, skiprows=5)
+        os.remove(temp_file_path)  # Clean up the temporary file
+
+        
         df = clean_dataframe(df)  # Clean the dataframe to remove non-datetime starting rows
-        df = df.iloc[:, :5]  # Select the first 5 columns
+        # df = df.iloc[:, :5]  # Select the first 5 columns
+        df = df.iloc[:, [0, 1, 3, 5]]  # Select the index, 2nd, 4th, and 6th columns
         df = df.fillna(0)
+        df["ผลรวม"] = df["RATE A"]+df["RATE B"]+df["RATE C"]
+        
         all_dataframes.append(df)
+
+        print(f"Header for {file}: {df.columns.tolist()}")  # Print the header
     except Exception as e:
         # If there is an error, print the error and file name, then continue
         print(f"Error reading {file}: {e}")
@@ -71,3 +96,19 @@ if all_dataframes:
     combined_data.to_csv(os.path.join(output_files_dir, output_file_name), index=False)
 else:
     print("No data to concatenate. Check if the files are available and correctly formatted.")
+
+
+# Read the CSV file into a DataFrame
+df = pd.read_csv(os.path.join(output_files_dir, output_file_name))
+
+# Reformat the 'Date' column to the desired format
+df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y %H.%M').dt.strftime('%d.%m.%Y %H.%M')
+
+# Drop the 'RATE A', 'RATE B', and 'RATE C' columns
+df.drop(['RATE A', 'RATE B', 'RATE C'], axis=1, inplace=True)
+
+# Save the modified DataFrame back to a CSV file
+file_name_without_extension, _ = os.path.splitext(output_file_name)
+homer_output_file_name = file_name_without_extension + "_homer.csv"
+df.to_csv(os.path.join(output_files_dir, homer_output_file_name), index=False)
+

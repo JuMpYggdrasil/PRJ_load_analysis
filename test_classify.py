@@ -3,26 +3,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-# Generate a datetime index for an entire year with hourly frequency
-date_rng = pd.date_range(start='2023-01-01', end='2023-12-31 23:00:00', freq='H')
+file_path = 'combined_data.csv'
+# Load the historical data with the specified timestamp format
+# date_format = '%d.%m.%Y %H:%M'
+date_format = '%d/%m/%Y %H.%M'
+#date_format ='ISO8601'
+data = pd.read_csv(file_path, parse_dates=['Date'], date_format=date_format)
 
-# Generate synthetic data
-np.random.seed(0)
-data = np.random.randn(len(date_rng))
+#data['Date'] = pd.to_datetime(data['Date'])
+data.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
 
-# Create a DataFrame
-df = pd.DataFrame(data, index=date_rng, columns=['Load'])
+# Ensure the timestamp column is set as the index
+data.set_index('timestamp', inplace=True)
 
-# Extract features
-df['hour'] = df.index.hour
+# Check for missing values and handle them if necessary
+if data.isnull().any().any():
+    data = data.interpolate()  # Interpolate missing values
+    # or
+    # data = data.fillna(method='ffill')  # Forward fill missing values
+    # data = data.fillna(method='bfill')  # Backward fill missing values
+    
+
+
+
+# Aggregate data to hourly intervals
+df = data.resample('H').mean()  # You can use 'D' for daily aggregation
+
+# Optionally, add additional features like day of the week
 df['day_of_week'] = df.index.dayofweek
-df['rolling_mean'] = df['Load'].rolling(window=24).mean()
 
-# Drop NaN values from rolling mean calculation
-df.dropna(inplace=True)
+# Add a 'month' column
+df['month'] = df.index.month
+
+# # Generate a datetime index for an entire year with hourly frequency
+# date_rng = pd.date_range(start='2023-01-01', end='2023-12-31 23:00:00', freq='H')
+
+# # Generate synthetic data
+# np.random.seed(0)
+# data = np.random.randn(len(date_rng))
+
+# # Create a DataFrame
+# df = pd.DataFrame(data, index=date_rng, columns=['Load'])
+
+# # Extract features
+df['hour'] = df.index.hour
+# df['day_of_week'] = df.index.dayofweek
+df['rolling_mean'] = df['load'].rolling(window=24).mean()
+
+# # Drop NaN values from rolling mean calculation
+# df.dropna(inplace=True)
 
 # Select features for clustering
-features = df[['Load', 'hour', 'day_of_week', 'rolling_mean']]
+features = df[['load', 'hour', 'day_of_week', 'rolling_mean']]
 
 # # Apply K-means clustering
 # kmeans = KMeans(n_clusters=4, random_state=0)
@@ -37,6 +69,6 @@ for cluster in sorted(df['cluster'].unique()):
     plt.figure(figsize=(10, 6))
     plt.title(f"Cluster {cluster}")
     cluster_data = df[df['cluster'] == cluster]
-    plt.plot(cluster_data['Load'], label=f"Cluster {cluster}", linestyle='', marker='o')
+    plt.plot(cluster_data['load'], label=f"Cluster {cluster}", linestyle='', marker='o')
     plt.legend()
     plt.show()

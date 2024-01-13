@@ -14,7 +14,11 @@ weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
 weekend_mask = (df.index.dayofweek >= 5)
 on_peak_mask = (df.index.hour >= 9) & (df.index.hour < 22)
 off_peak_mask = ~on_peak_mask
-specific_dates = ['2022-01-01', '2022-02-16', '2022-02-26', '2022-04-06', '2022-04-13', '2022-04-14', '2022-04-15', '2022-05-01', '2022-05-04', '2022-05-15', '2022-06-03', '2022-07-13', '2022-07-14', '2022-07-15', '2022-07-28', '2022-07-29', '2022-08-12', '2022-10-13', '2022-10-14', '2022-10-23', '2022-10-30', '2022-12-05', '2022-12-25', '2022-12-30']
+# PEA off-peak date @(MON-FRI) special
+specific_dates = ['2021-01-01', '2021-02-12', '2021-02-26', '2021-04-06', '2021-04-12', '2021-04-13', '2021-04-14', '2021-04-15', '2021-05-04', '2021-05-26', '2021-06-03', '2021-07-27', '2021-07-28', '2021-08-12', '2021-09-24', '2021-10-13', '2021-12-10', '2021-12-31',
+                  '2022-02-16', '2022-04-06', '2022-04-13', '2022-04-14', '2022-04-15', '2022-05-04', '2022-06-03', '2022-07-13', '2022-07-14', '2022-07-15', '2022-07-28', '2022-07-29', '2022-08-12', '2022-10-13', '2022-10-14', '2022-12-05', '2022-12-30',
+                  '2023-03-06', '2023-04-06', '2023-04-13', '2023-04-14', '2023-05-13', '2023-05-14', '2023-07-28', '2023-08-01', '2023-08-02', '2023-10-13', '2023-10-23', '2023-12-05',
+                  '2024-01-01', '2024-04-15', '2024-05-01', '2024-05-22', '2024-06-03', '2024-08-12', '2024-10-23', '2024-12-05', '2024-12-10', '2024-12-31']
 specific_dates = pd.to_datetime(specific_dates, format='%Y-%m-%d')
 specific_dates_mask = df.index.isin(specific_dates)
 
@@ -89,7 +93,7 @@ plt.ylabel('Average Load (kW)')
 plt.legend()
 plt.grid(True)
 plt.xticks(hours)
-plt.savefig("average_weekday_weekend.png", format="png")
+plt.savefig("result/average_weekday_weekend.png", format="png")
 plt.show()
 
 # Plot the hourly data for all 7 days of the week on the same page
@@ -103,7 +107,7 @@ plt.ylabel('Average Load (kW)')
 plt.legend()
 plt.grid(True)
 plt.xticks(hours)
-plt.savefig("average_load.png", format="png")
+plt.savefig("result/average_load_every_day.png", format="png")
 plt.show()
 
 
@@ -133,7 +137,7 @@ plt.grid(True)
 plt.xticks(range(0, 101, 10))
 #plt.xticks(percentiles)
 
-plt.savefig("load_duration_curve_all_days.png", format="png")
+plt.savefig("result/load_duration_curve_all_days.png", format="png")
 plt.show()
 
 
@@ -151,9 +155,10 @@ plt.xlabel('Percentile')
 plt.ylabel('Load (kW)')
 plt.legend()
 plt.grid(True)
-plt.axhline(y=1850, color='gray', linestyle='--', label='Load = 1850 kW')
+mark_line_val = 400
+plt.axhline(y=mark_line_val, color='gray', linestyle='--', label=f'Load = {mark_line_val:.1f} kW')
 
-plt.savefig("load_duration_curve_all_months.png", format="png")
+plt.savefig("result/load_duration_curve_all_months.png", format="png")
 plt.show()
 # 1 month = 720 hours
 
@@ -175,7 +180,7 @@ plt.grid(True)
 plt.xticks(range(0, 101, 10))
 #plt.xticks(percentiles)
 
-plt.savefig("load_duration_curve_weekdays_weekends.png", format="png")
+plt.savefig("result/load_duration_curve_weekdays_weekends.png", format="png")
 plt.show()
 
 plt.figure(figsize=(12, 6))
@@ -192,5 +197,5 @@ plt.xlabel('Load')
 plt.ylabel('Frequency')
 
 plt.tight_layout()
-plt.savefig("load_distributiom.png", format="png")
+plt.savefig("result/load_distributiom.png", format="png")
 plt.show()

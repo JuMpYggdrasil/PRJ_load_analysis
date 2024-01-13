@@ -23,12 +23,15 @@ def load_and_process_data(file_path):
         # or
         # data = data.fillna(method='ffill')  # Forward fill missing values
         # data = data.fillna(method='bfill')  # Backward fill missing values
-        
+    # data.to_csv('temp.csv')
+    print(data.head())
 
-
+    if data is None:
+        print("ERROR")
+        return
 
     # Aggregate data to hourly intervals
-    hourly_data = data.resample('H').mean()  # You can use 'D' for daily aggregation
+    hourly_data = data.resample('H').mean()
 
     # Optionally, add additional features like day of the week
     hourly_data['day_of_week'] = hourly_data.index.dayofweek
@@ -79,7 +82,7 @@ def load_and_process_data(file_path):
     plt.ylabel('Load')
     plt.grid(True)
     plt.legend()
-    plt.savefig("peak_day.png", format="png")
+    plt.savefig("result/peak_day.png", format="png")
     plt.show()
 
     # on_peak_hours_price = 2 # Rate A
