@@ -17,28 +17,41 @@ off_peak_mask = ~on_peak_mask
 # PEA off-peak date @(MON-FRI) special
 specific_dates = ['2021-01-01', '2021-02-12', '2021-02-26', '2021-04-06', '2021-04-12', '2021-04-13', '2021-04-14', '2021-04-15', '2021-05-04', '2021-05-26', '2021-06-03', '2021-07-27', '2021-07-28', '2021-08-12', '2021-09-24', '2021-10-13', '2021-12-10', '2021-12-31',
                   '2022-02-16', '2022-04-06', '2022-04-13', '2022-04-14', '2022-04-15', '2022-05-04', '2022-06-03', '2022-07-13', '2022-07-14', '2022-07-15', '2022-07-28', '2022-07-29', '2022-08-12', '2022-10-13', '2022-10-14', '2022-12-05', '2022-12-30',
-                  '2023-03-06', '2023-04-06', '2023-04-13', '2023-04-14', '2023-05-13', '2023-05-14', '2023-07-28', '2023-08-01', '2023-08-02', '2023-10-13', '2023-10-23', '2023-12-05',
+                  '2023-03-06', '2023-04-06', '2023-04-13', '2023-04-14', '2023-05-01', '2023-05-04', '2023-07-28', '2023-08-01', '2023-08-02', '2023-10-13', '2023-10-23', '2023-12-05',
                   '2024-01-01', '2024-04-15', '2024-05-01', '2024-05-22', '2024-06-03', '2024-08-12', '2024-10-23', '2024-12-05', '2024-12-10', '2024-12-31']
 specific_dates = pd.to_datetime(specific_dates, format='%Y-%m-%d')
 specific_dates_mask = df.index.isin(specific_dates)
 
-# Extract data for weekdays (Monday to Friday)
-weekdays = df[weekday_mask & ~specific_dates_mask]
+
 # Apply the masks to create the "On Peak" and "Off Peak" groups
 on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask]
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask]
+holiday_data = df[specific_dates_mask | weekend_mask]
 
 sum_on_peak_data = on_peak_data['load'].sum()
-print(f"Sum of On Peak Data: {sum_on_peak_data:.2f} kWh")
+print(f"Energy of On Peak Data: {sum_on_peak_data:.2f} kWh")
 
 sum_off_peak_data = off_peak_data['load'].sum()
-print(f"Sum of Off Peak Data: {sum_off_peak_data:.2f} kWh")
+print(f"Energy of Off Peak Data: {sum_off_peak_data:.2f} kWh")
 
+sum_holiday_data = holiday_data['load'].sum()
+print(f"Energy of holiday Data: {sum_holiday_data:.2f} kWh")
+
+print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):.2f} kWh")
+
+
+sum_total_data = df['load'].sum()
+print(f"Sum of all Data: {sum_total_data:.2f} kWh")
+
+# Extract data for weekdays (Monday to Friday)
+weekdays = df[weekday_mask & ~specific_dates_mask]
+# sum_weekday = weekdays['load'].sum()
+# print(f"Sum of weekends(Holiday) Data: {sum_weekday:.2f} kWh")
 # Extract data for weekends (Saturday and Sunday)
 weekends = df[weekend_mask | specific_dates_mask]
-sum_weekend = weekends['load'].sum()
-print(f"Sum of weekends Data: {sum_weekend:.2f}")
-print(f"Total: {(sum_on_peak_data+sum_off_peak_data+sum_weekend):.2f} kWh")
+# sum_weekend = weekends['load'].sum()
+# print(f"Sum of weekends(Holiday) Data: {sum_weekend:.2f} kWh")
+
 
 sorted_weekdays_loads = sorted(weekdays['load'], reverse=True)
 sorted_weekends_loads = sorted(weekends['load'], reverse=True)

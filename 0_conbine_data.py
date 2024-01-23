@@ -89,8 +89,8 @@ if all_dataframes:
     # Concatenate all dataframes
     combined_data = pd.concat(all_dataframes, ignore_index=True)
     combined_data.rename(columns={'Unnamed: 0': 'Date','ผลรวม': 'Load'}, inplace=True)
-    # Sort by 'Date'
-    combined_data.sort_values(by='Date', inplace=True)
+    # Sort by 'Date' : Date is in text format -> not good to sort
+    # combined_data.sort_values(by='Date', inplace=True)
 
     # Save the combined data to a new CSV file
     combined_data.to_csv(os.path.join(output_files_dir, output_file_name), index=False)
@@ -102,7 +102,7 @@ else:
 df = pd.read_csv(os.path.join(output_files_dir, output_file_name))
 
 # Reformat the 'Date' column to the desired format
-df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y %H.%M').dt.strftime('%d.%m.%Y %H.%M')
+df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y %H.%M').dt.strftime('%d.%m.%Y %H:%M')
 
 # Drop the 'RATE A', 'RATE B', and 'RATE C' columns
 df.drop(['RATE A', 'RATE B', 'RATE C'], axis=1, inplace=True)
