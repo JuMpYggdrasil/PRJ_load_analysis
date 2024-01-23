@@ -29,16 +29,16 @@ on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask]
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask]
 
 sum_on_peak_data = on_peak_data['load'].sum()
-print(f"Sum of On Peak Data: {sum_on_peak_data:.2f}")
+print(f"Sum of On Peak Data: {sum_on_peak_data:.2f} kWh")
 
 sum_off_peak_data = off_peak_data['load'].sum()
-print(f"Sum of Off Peak Data: {sum_off_peak_data:.2f}")
+print(f"Sum of Off Peak Data: {sum_off_peak_data:.2f} kWh")
 
 # Extract data for weekends (Saturday and Sunday)
 weekends = df[weekend_mask | specific_dates_mask]
 sum_weekend = weekends['load'].sum()
 print(f"Sum of weekends Data: {sum_weekend:.2f}")
-print(f"Total: {(sum_on_peak_data+sum_off_peak_data+sum_weekend):.2f}")
+print(f"Total: {(sum_on_peak_data+sum_off_peak_data+sum_weekend):.2f} kWh")
 
 sorted_weekdays_loads = sorted(weekdays['load'], reverse=True)
 sorted_weekends_loads = sorted(weekends['load'], reverse=True)

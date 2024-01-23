@@ -8,7 +8,7 @@ def select_csv_file():
     if file_path:
         load_and_process_data(file_path)
         print("fp:")
-        print(type(file_path))
+        # print(type(file_path))
         print(file_path)
 
 

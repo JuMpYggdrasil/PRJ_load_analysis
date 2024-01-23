@@ -6,10 +6,10 @@ import openpyxl
 # create 1 year data (.csv) from 12 excel (.xlsx) files
 
 # Set the directory where your Excel files are located
-excel_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis\source'
-output_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis'
-# excel_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis\source'
-# output_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis'
+# excel_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis\source'
+# output_files_dir = r'C:\Users\Egat\Documents\GitHub\PRJ_load_analysis'
+excel_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis\source'
+output_files_dir = r'C:\Users\thitinun\Documents\GitHub\PRJ_load_analysis'
 output_file_name = r'combined_data.csv'
 
 def dumb_AMR_format_to_datetime(date_str):
