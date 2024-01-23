@@ -15,17 +15,23 @@ def load_and_process_data(file_path):
     #data['Date'] = pd.to_datetime(data['Date'])
     data.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
 
+    data['load'].fillna(method='ffill', inplace=True)  # Forward fill
+    # data['load'].fillna(method='bfill', inplace=True)  # Backward fill
+
     # Ensure the timestamp column is set as the index
     data.set_index('timestamp', inplace=True)
+    data.index = pd.to_datetime(data.index)
 
-    # Check for missing values and handle them if necessary
-    if data.isnull().any().any():
-        data = data.interpolate()  # Interpolate missing values
-        # or
-        # data = data.fillna(method='ffill')  # Forward fill missing values
-        # data = data.fillna(method='bfill')  # Backward fill missing values
-    # data.to_csv('temp.csv')
+    # # Check for missing values and handle them if necessary
+    # if data.isnull():
+    #     # data = data.interpolate()  # Interpolate missing values
+    #     # or
+    #     data = data.fillna(method='ffill')  # Forward fill missing values
+    #     # data = data.fillna(method='bfill')  # Backward fill missing values
+
+    
     print(data.head())
+    print(data.index)
 
     if data is None:
         print("ERROR")
