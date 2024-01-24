@@ -2,12 +2,14 @@ import pandas as pd
 import os
 
 file_name = "EnergyDayChartAll2022.csv"
+from_format = '%m/%d/%Y %H:%M'
+to_format = '%d/%m/%Y %H.%M'
 
 # Read the CSV file into a DataFrame
 df = pd.read_csv(file_name)
 
 # Reformat the 'Date' column to the desired format
-df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%Y %H:%M').dt.strftime('%d/%m/%Y %H.%M')
+df['Date'] = pd.to_datetime(df['Date'], format=from_format).dt.strftime(to_format)
 
 # Save the modified DataFrame back to a CSV file
 file_name_without_extension, _ = os.path.splitext(file_name)
