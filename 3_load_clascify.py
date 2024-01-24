@@ -23,10 +23,13 @@ specific_dates = pd.to_datetime(specific_dates, format='%Y-%m-%d')
 specific_dates_mask = df.index.isin(specific_dates)
 
 
-# Apply the masks to create the "On Peak" and "Off Peak" groups
-on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask]
-off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask]
-holiday_data = df[specific_dates_mask | weekend_mask]
+# selected_month_mask = (df.index.month == 2) # for view specific month
+selected_month_mask = True # for all month
+
+# Apply the masks to create the "On Peak", "Off Peak" and "Holiday" groups
+on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_month_mask]
+off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
+holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
 
 sum_on_peak_data = on_peak_data['load'].sum()
 print(f"Energy of On Peak Data: {sum_on_peak_data:.2f} kWh")
