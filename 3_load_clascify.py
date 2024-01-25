@@ -1,6 +1,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+unit_price_on_peak = 4.1839
+unit_price_off_peak = 2.6037
+# unit_price_holiday = unit_price_off_peak
+unit_price_demand_charge = 132.93
+unit_price_service_charge = 312.24
+# *** ignore FT 5-10% and vat 7%
+
 # Load your electrical load data into a Pandas DataFrame
 df = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 # df.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
@@ -42,9 +49,30 @@ print(f"Energy of holiday Data: {sum_holiday_data:.2f} kWh")
 
 print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):.2f} kWh")
 
-
 sum_total_data = df['load'].sum()
 print(f"Sum of all Data: {sum_total_data:.2f} kWh")
+
+demand_charge_df = df['load'].resample('M').max()
+sum_demand_charge = demand_charge_df.sum()
+print(f"Sum of demand_charge: {sum_demand_charge:.2f} kW")
+# print(demand_charge_df)
+
+print("")
+price_on_peak = unit_price_on_peak * sum_on_peak_data
+print(f"price_on_peak: {price_on_peak:,.2f} THB")
+
+price_off_peak = unit_price_off_peak * (sum_off_peak_data+sum_holiday_data)
+print(f"price_off_peak: {price_off_peak:,.2f} THB")
+
+price_demand_charge = unit_price_demand_charge * sum_demand_charge
+print(f"price_demand_charge: {price_demand_charge:,.2f} THB")
+
+price_service_charge = unit_price_service_charge * 12
+
+total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
+print(f"Total Base Price: {total_price:,.2f} THB")
+print("\tignore FT & vat\n\r")
+
 
 # Extract data for weekdays (Monday to Friday)
 weekdays = df[weekday_mask & ~specific_dates_mask]

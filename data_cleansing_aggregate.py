@@ -115,8 +115,14 @@ def load_and_process_data(file_path):
 
     # print(f'Total cost during peak hours: ${total_cost_peak:.2f}')
 
+    # Aggregate data to hourly intervals
+    montly_peak_data = data.resample('M').max()
+
+    # Save the prepared data to a CSV file
+    montly_peak_data.to_csv('montly_peak_load_data.csv')
+
 if __name__ == '__main__':
     # file_path = 'combined_data.csv'
-    file_path = 'EnergyDayChartAll2022.csv'
+    file_path = 'EnergyDayChartAll2022_edit.csv'
     load_and_process_data(file_path)
     
