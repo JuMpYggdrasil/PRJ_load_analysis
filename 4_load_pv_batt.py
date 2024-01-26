@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-PV_Install_Capacity = [1,150] # kW
+PV_Install_Capacity = [100,200,150] # kW
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -29,9 +29,12 @@ print(df_pv.index.dtype)
 
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
+    
+
     df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
     df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
+    df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
 
 
 
@@ -98,7 +101,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"Total Base Price: {total_price:,.2f} THB")
     print("\tignore FT & vat\n\r")
         
-    
+    discharge_time_mask = (df.index.hour >= 9) & (df.index.hour < 11)
+    load_existing_kWh_df = df[discharge_time_mask]['load_existing'].resample('D').sum() # forward euler
 
     pv_curtailed_kWh_df = df['pv_curtailed'].resample('D').sum()
     pv_curtailed_kWh_df = pv_curtailed_kWh_df[pv_curtailed_kWh_df > 1]
@@ -108,8 +112,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     percentile_40_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.40)
     percentile_60_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.60)
     percentile_80_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.80)
-    print(f"max of PV curtailed: {max_pv_curtailed_kWh:,.2f} kWh")
-    print(f"  -- suggest Battery Capacity: {percentile_60_pv_curtailed_kWh:,.0f} kWh")
+    print(f"max battery from PV curtailed: {max_pv_curtailed_kWh:,.2f} kWh")
+    print(f"  -- suggest Battery Capacity: {percentile_60_pv_curtailed_kWh:,.0f} kWh\n\r")
 
     
 
@@ -118,7 +122,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     plt.figure(figsize=(10, 6))
 
     # Plotting the data
-    plt.plot(pv_curtailed_kWh_df, marker='o', label='Data')
+    plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
 
     # Adding a horizontal line for the 40th percentile
     plt.axhline(y=percentile_80_pv_curtailed_kWh, color='lime', linestyle='--', label=f'80th Percentile ({percentile_80_pv_curtailed_kWh})')
@@ -126,7 +130,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     plt.axhline(y=percentile_40_pv_curtailed_kWh, color='lightgreen', linestyle='--', label=f'40th Percentile ({percentile_40_pv_curtailed_kWh})')
  
     # Adding title and labels
-    plt.title('Data with 60th Percentile Line')
+    plt.title(f'PV Curtailed with 60th Percentile Line ({pv_install_capacity:,.0f} kWp)')
     plt.xlabel('Index')
     plt.ylabel('Values')
 
@@ -136,20 +140,67 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     # Show the plot
     plt.show()
 
+
     # =============================================== #
     # ============= SELECT BATTERY SIZE ============= #
     # =============================================== #
     # batt_cap_selected = percentile_60_pv_curtailed_kWh
-    batt_cap_selected = 200 # kWh
+    batt_capacity_selected = 900 # kWh
+    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
 
-    batt_store_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
-    sum_batt_store_kWh = batt_store_kWh_df.sum()
-    price_batt_store = (sum_batt_store_kWh*4.1)
-    batt_arbitrage_kWh = batt_cap_selected*0.7*365*0.9*2 # batt performance 70%, 2 (4.1-2.1) THB/unit
-    total_price_batt = price_batt_store + batt_arbitrage_kWh
-    print(f"  -- installed Battery       : {batt_cap_selected:,.0f} kWh")
-    print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_cap_selected):,.0f} THB/kWh/10years)")
-    print("Installing a battery will be worthwhile only if there is income from other conditions, such as the cost of damages when a power outage occurs.")
+    # arbitrage only (discharge) 9.00-11.00 in case load > PV
+    batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum()
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+
+    batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum()
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    
+    total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
+    print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+    print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"")
+
+    batt_capacity_selected = 200 # kWh
+    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+
+    # arbitrage only (discharge) 9.00-11.00 in case load > PV
+    batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum()
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+
+    batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum()
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    
+    total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
+    print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+    print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"")
+
+
+
+    batt_capacity_selected = 100 # kWh
+    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+
+    # arbitrage only (discharge) 9.00-11.00 in case load > PV
+    batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum()
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+
+    batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum()
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    
+    total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
+    print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+    print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"")
+
 
     df.to_csv('load_pv_profile.csv')
 
