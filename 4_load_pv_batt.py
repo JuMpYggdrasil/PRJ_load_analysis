@@ -30,13 +30,34 @@ print(df_pv.index.dtype)
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     
-
-    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity
+    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * 1.05
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
     df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
     df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
 
+    target_month = [1, 6]
 
+    for month in target_month:
+
+        # Plotting 'load' and 'pv_serve_load' columns against the timestamp index
+        plt.plot(df_load.index, df_load['load'], label='Load')
+        plt.plot(df_load.index, df_load['pv_produce'], label='PV Produce')
+
+        # Adding labels and title
+        plt.xlabel('Timestamp')
+        plt.ylabel('Load')
+        plt.title('Load and PV Produce Over Time')
+
+        # Adding legend
+        plt.legend()
+
+        
+        # Set x-axis limits to the current target month
+        plt.xlim((df_load.index[0].replace(month=month), df_load.index[0].replace(month=month + 1)))
+
+
+        # Display the plot
+        plt.show()
 
     sum_pv_produce = df_load['pv_produce'].sum()
     print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year")
@@ -169,6 +190,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
     print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"                             : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
     print(f"")
 
     batt_capacity_selected = 200 # kWh
@@ -187,6 +209,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
     print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"                             : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
     print(f"")
 
 
@@ -207,6 +230,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
     print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"                             : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
     print(f"")
 
 
