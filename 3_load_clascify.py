@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -15,7 +16,15 @@ df = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 # Assuming your DataFrame has a 'timestamp' column, you can set it as the index
 df.set_index('timestamp', inplace=True)
 
-#df = df[df.index.month==10]
+first_row_timestamp = df.index[0]
+year_of_first_row = first_row_timestamp.year
+# Create the folder if it doesn't exist
+folder_name = f"result_{year_of_first_row}"
+if not os.path.exists(folder_name):
+    os.makedirs(folder_name)
+    print(f"Folder '{folder_name}' created.")
+
+
 
 weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
 weekend_mask = (df.index.dayofweek >= 5)
@@ -137,7 +146,7 @@ plt.ylabel('Average Load (kW)')
 plt.legend()
 plt.grid(True)
 plt.xticks(hours)
-plt.savefig("result/average_weekday_weekend.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/average_weekday_weekend.png", format="png")
 plt.show()
 
 # Plot the hourly data for all 7 days of the week on the same page
@@ -151,7 +160,7 @@ plt.ylabel('Average Load (kW)')
 plt.legend()
 plt.grid(True)
 plt.xticks(hours)
-plt.savefig("result/average_load_every_day.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/average_load_every_day.png", format="png")
 plt.show()
 
 
@@ -181,7 +190,7 @@ plt.grid(True)
 plt.xticks(range(0, 101, 10))
 #plt.xticks(percentiles)
 
-plt.savefig("result/load_duration_curve_all_days.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/load_duration_curve_all_days.png", format="png")
 plt.show()
 
 
@@ -202,7 +211,7 @@ plt.grid(True)
 mark_line_val = 400
 plt.axhline(y=mark_line_val, color='gray', linestyle='--', label=f'Load = {mark_line_val:.1f} kW')
 
-plt.savefig("result/load_duration_curve_all_months.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/load_duration_curve_all_months.png", format="png")
 plt.show()
 # 1 month = 720 hours
 
@@ -224,7 +233,7 @@ plt.grid(True)
 plt.xticks(range(0, 101, 10))
 #plt.xticks(percentiles)
 
-plt.savefig("result/load_duration_curve_weekdays_weekends.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/load_duration_curve_weekdays_weekends.png", format="png")
 plt.show()
 
 plt.figure(figsize=(12, 6))
@@ -241,5 +250,5 @@ plt.xlabel('Load')
 plt.ylabel('Frequency')
 
 plt.tight_layout()
-plt.savefig("result/load_distributiom.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/load_distributiom.png", format="png")
 plt.show()

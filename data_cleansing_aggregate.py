@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
 # Create a function to load and process the selected .csv file
@@ -28,6 +29,14 @@ def load_and_process_data(file_path):
     else:
         print("ERROR: Wrong Index Format")
         return
+    
+    first_row_timestamp = data.index[0]
+    year_of_first_row = first_row_timestamp.year
+    # Create the folder if it doesn't exist
+    folder_name = f"result_{year_of_first_row}"
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"Folder '{folder_name}' created.")
     
     
 
@@ -97,7 +106,7 @@ def load_and_process_data(file_path):
     plt.ylabel('Load')
     plt.grid(True)
     plt.legend()
-    plt.savefig("result/peak_day.png", format="png")
+    plt.savefig(f"result_{year_of_first_row}/peak_day.png", format="png")
     plt.show()
 
     # on_peak_hours_price = 2 # Rate A

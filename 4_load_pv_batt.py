@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 PV_Install_Capacity = [0.000001,150] # kW
 
@@ -14,9 +15,38 @@ unit_price_service_charge = 312.24
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)
 
-df_pv = pd.read_csv('solar_1kW_2022.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+first_row_timestamp = df_load.index[0]
+year_of_first_row = first_row_timestamp.year
+# Create the folder if it doesn't exist
+folder_name = f"result_{year_of_first_row}"
+if not os.path.exists(folder_name):
+    os.makedirs(folder_name)
+    print(f"Folder '{folder_name}' created.")
+
+df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 df_pv.set_index('timestamp', inplace=True)
 
+
+# Calculate hourly averages for each hour of the day
+solar_pattern = []
+for hour in range(24):
+    solar_pattern.append(df_pv['pv'][df_pv.index.hour == hour].mean())
+    
+print(solar_pattern)
+
+df_pv_day = df_pv.resample('D').max()
+df_pv_data = pd.DataFrame(index=df_pv_day.index)
+
+df_pv_data['pv_max'] = df_pv_day['pv']
+df_pv_data['pv_6']=df_pv[df_pv.index.hour == 6].resample('D').mean()['pv']
+df_pv_data['pv_7']=df_pv[df_pv.index.hour == 7].resample('D').mean()['pv']
+df_pv_data['pv_8']=df_pv[df_pv.index.hour == 8].resample('D').mean()['pv']
+df_pv_data.to_csv('tempo.csv')
+    
+
+
+# Create a list of hours (0 to 23) for the x-axis
+hours = list(range(24))
 
 # selected_month_mask = (df.index.month == 2) # for view specific month
 selected_month_mask = True # for all month
@@ -166,8 +196,10 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     # Adding a legend
     plt.legend()
 
+    plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
     # Show the plot
     plt.show()
+    
 
 
     # =============================================== #
@@ -179,12 +211,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
-    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum()
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
     price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
-    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum()
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
     price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
@@ -198,12 +230,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
-    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum()
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
     price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
-    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum()
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
     price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
