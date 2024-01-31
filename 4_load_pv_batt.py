@@ -66,9 +66,11 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
 
     target_month = [1, 6]
+    month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 
     for month in target_month:
-
+        plt.figure(figsize=(14, 6))
         # Plotting 'load' and 'pv_serve_load' columns against the timestamp index
         plt.plot(df_load.index, df_load['load'], label='Load')
         plt.plot(df_load.index, df_load['pv_produce'], label='PV Produce')
@@ -76,7 +78,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         # Adding labels and title
         plt.xlabel('Timestamp')
         plt.ylabel('Load')
-        plt.title('Load and PV Produce Over Time')
+        plt.title(f"Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}")
 
         # Adding legend
         plt.legend()
@@ -85,7 +87,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         # Set x-axis limits to the current target month
         plt.xlim((df_load.index[0].replace(month=month), df_load.index[0].replace(month=month + 1)))
 
-
+        plt.savefig(f"result_{year_of_first_row}/Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}.png", format="png")
         # Display the plot
         plt.show()
 
