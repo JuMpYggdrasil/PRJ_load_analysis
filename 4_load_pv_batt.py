@@ -33,6 +33,8 @@ for hour in range(24):
     solar_pattern.append(df_pv['pv'][df_pv.index.hour == hour].mean())
     
 print(solar_pattern)
+df_solar_pattern = pd.DataFrame(solar_pattern)
+df_solar_pattern.to_csv("solar_pattern.csv")
 
 df_pv_day = df_pv.resample('D').max()
 df_pv_data = pd.DataFrame(index=df_pv_day.index)

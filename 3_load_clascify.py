@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -252,3 +253,23 @@ plt.ylabel('Frequency')
 plt.tight_layout()
 plt.savefig(f"result_{year_of_first_row}/load_distributiom.png", format="png")
 plt.show()
+
+
+
+df_load_with_pv = df
+
+
+# Define the time range (6:00 AM to 6:00 PM)
+time_range = pd.to_datetime(['06:00:00', '18:00:00'], format='%H:%M:%S').time
+
+
+# Replace values in the specified time range with NaN
+df_load_with_pv['load_wo_pv'] = df_load_with_pv.apply(lambda row: np.nan if time_range[0] <= row.name.time() <= time_range[1] else row['load'], axis=1)
+
+# Forward fill to replace empty values with the nearest non-empty value
+df_load_with_pv.ffill(inplace=True)
+
+# Display the resulting DataFrame
+print(df_load_with_pv)
+
+df_load_with_pv.to_csv('load_without pv.csv', index=True)
