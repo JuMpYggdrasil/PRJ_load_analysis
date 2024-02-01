@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-PV_Install_Capacity = [0.000001,150,200,300,400,500,600,800] # kW
+PV_Install_Capacity = [0.000001,150,200,300,400,500,1000] # kW
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
