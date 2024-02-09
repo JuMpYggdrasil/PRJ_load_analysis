@@ -14,13 +14,17 @@ if not os.path.exists(folder_name):
     os.makedirs(folder_name)
     print(f"Folder '{folder_name}' created.")
 
-specific_1_day_mask = (data.index.dayofweek == 0) 
-specific_2_day_mask = (data.index.dayofweek >= 0) & (data.index.dayofweek < 1)
-specific_3_day_mask = (data.index.dayofweek == 6) 
+specific_1_day_mask = (data.index.dayofweek == 0) # MON
+specific_2_day_mask = (data.index.dayofweek >= 0) & (data.index.dayofweek < 5) # MON-FRI
+specific_3_day_mask = (data.index.dayofweek == 5) # SAT
+specific_4_day_mask = (data.index.dayofweek == 6) # SUN
+specific_5_day_mask = (data.index.dayofweek >= 5) # SAT-SUN
 
 specific_1_day = data[specific_1_day_mask]
 specific_2_day = data[specific_2_day_mask]
 specific_3_day = data[specific_3_day_mask]
+specific_4_day = data[specific_4_day_mask]
+specific_5_day = data[specific_5_day_mask]
 
 # Feature Engineering: Adding lag features (previous hour's load)
 data['load_lag1'] = data['load'].shift(1)  # Lag of 1 hour
@@ -69,7 +73,7 @@ plt.show()
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_2_day, showfliers = False, palette='bright')
-plt.title('Seasonal Variation in Load of MON-SAT Day')
+plt.title('Seasonal Variation in Load of MON-FRI Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_2.png", format="png")
@@ -77,10 +81,26 @@ plt.show()
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_3_day, showfliers = False, palette='bright')
-plt.title('Seasonal Variation in Load of SUN Day')
+plt.title('Seasonal Variation in Load of SAT Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_3.png", format="png")
+plt.show()
+
+# Explore seasonality with a box plot
+sns.boxplot(x='month', y='load', data=specific_4_day, showfliers = False, palette='bright')
+plt.title('Seasonal Variation in Load of SUN Day')
+plt.xlabel('Month')
+plt.ylabel('Load')
+plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_4.png", format="png")
+plt.show()
+
+# Explore seasonality with a box plot
+sns.boxplot(x='month', y='load', data=specific_5_day, showfliers = False, palette='bright')
+plt.title('Seasonal Variation in Load of SAT-SUN Day')
+plt.xlabel('Month')
+plt.ylabel('Load')
+plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_5.png", format="png")
 plt.show()
 
 # Explore trends with a rolling mean

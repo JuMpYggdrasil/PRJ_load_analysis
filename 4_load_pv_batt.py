@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-PV_Install_Capacity = [0.000001,150,200,300,400,500,1000] # kW
+PV_Install_Capacity = [0.000001,150,200,300,400,500,900] # kW
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -165,6 +165,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     count_curtailed_day = (df[discharge_time_mask]['pv_curtailed'] > 0).sum()/2
     print(f"PV < load @9.00 {count_arbitrage_day} days")
     print(f"PV > load @9.00 {count_curtailed_day} days")
+    print(f"Cycle/year {count_arbitrage_day+count_curtailed_day} days")
 
 
     pv_curtailed_kWh_df = df['pv_curtailed'].resample('D').sum()
@@ -291,6 +292,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
+    print(f"min: {batt_arbitrage_kWh_df.min()}")
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
     price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%

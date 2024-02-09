@@ -7,9 +7,7 @@ def select_csv_file():
     file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
     if file_path:
         load_and_process_data(file_path)
-        print("fp:")
-        # print(type(file_path))
-        print(file_path)
+        print(f"fp: {file_path}")
 
 
 
@@ -26,6 +24,8 @@ label.pack(pady=(20, 0))  # Adding some padding for better spacing
 # Create a button to open the file dialog
 select_button = tk.Button(root, text="Select .csv File", command=select_csv_file)
 select_button.pack(pady=20)
+
+tk.Label(root, text=f"suggest combined_data.csv or <data>_edit.csv").pack()
 
 # Start the Tkinter main loop
 root.mainloop()
