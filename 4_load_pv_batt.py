@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-PV_Install_Capacity = [0.000001,150,200,300,400,500,900] # kW
+# PV_Install_Capacity = [0.0000001,150,200] # kW
+PV_Install_Capacity = [0.0000001,150,200,300,400,500,900] # kW
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -139,7 +140,6 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     demand_charge_df = df['pv_serve_load'].resample('M').max()
     sum_demand_charge = demand_charge_df.sum()
     # print(f"Sum of demand_charge: {sum_demand_charge:.2f} kW")
-    
 
     price_on_peak = unit_price_on_peak * sum_on_peak_data
     # print(f"price_on_peak: {price_on_peak:,.2f} THB")
@@ -158,14 +158,21 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         
     discharge_time_mask = (df.index.hour >= 9) & (df.index.hour < 11)
     load_existing_kWh_df = df[discharge_time_mask]['load_existing'].resample('D').sum() # forward euler
+
+    mask_arb = df[discharge_time_mask]['load_existing'].resample('D').sum() > 0
+    mask_cur = df[discharge_time_mask]['pv_curtailed'].resample('D').sum() > 0
     # Count values greater than zero
-    count_arbitrage_day = (df[discharge_time_mask]['load_existing'] > 0).sum()/2
+    count_arbitrage_day = (mask_arb).sum()
 
     # Count values less than zero
-    count_curtailed_day = (df[discharge_time_mask]['pv_curtailed'] > 0).sum()/2
-    print(f"PV < load @9.00 {count_arbitrage_day} days")
-    print(f"PV > load @9.00 {count_curtailed_day} days")
-    print(f"Cycle/year {count_arbitrage_day+count_curtailed_day} days")
+    count_curtailed_day = (mask_cur).sum()
+    print(f"PV < load @9.00: {count_arbitrage_day} days")
+    print(f"PV > load (in that day): {count_curtailed_day} days")
+
+    
+    count_both_case_day = (mask_arb & mask_cur).sum() + 365
+    print(f"Cycle/year {count_both_case_day} cycles")
+    print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
 
 
     pv_curtailed_kWh_df = df['pv_curtailed'].resample('D').sum()
@@ -292,7 +299,6 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
-    print(f"min: {batt_arbitrage_kWh_df.min()}")
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
     price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
