@@ -19,6 +19,8 @@ def load_and_process_data(file_path):
 
     data.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
 
+    
+
     # data['load'].fillna(method='ffill', inplace=True)  # Forward fill
     # data['load'].fillna(method='bfill', inplace=True)  # Backward fill
 

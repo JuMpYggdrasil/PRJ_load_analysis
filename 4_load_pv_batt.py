@@ -41,10 +41,10 @@ df_pv_day = df_pv.resample('D').max()
 df_pv_data = pd.DataFrame(index=df_pv_day.index)
 
 df_pv_data['pv_max'] = df_pv_day['pv']
+df_pv_data['pv_5']=df_pv[df_pv.index.hour == 5].resample('D').mean()['pv']
 df_pv_data['pv_6']=df_pv[df_pv.index.hour == 6].resample('D').mean()['pv']
 df_pv_data['pv_7']=df_pv[df_pv.index.hour == 7].resample('D').mean()['pv']
-df_pv_data['pv_8']=df_pv[df_pv.index.hour == 8].resample('D').mean()['pv']
-df_pv_data.to_csv('tempo.csv')
+df_pv_data.to_csv('pv_data_for_train_model.csv')
     
 
 

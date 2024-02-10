@@ -272,4 +272,4 @@ df_load_with_pv.ffill(inplace=True)
 # Display the resulting DataFrame
 print(df_load_with_pv)
 
-df_load_with_pv.to_csv('load_without pv.csv', index=True)
+df_load_with_pv.to_csv('load_without_pv.csv', index=True)

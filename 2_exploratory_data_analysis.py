@@ -53,6 +53,43 @@ plt.title('Electrical Load Time Series')
 plt.legend()
 plt.grid(True)
 plt.show()
+# plt.clf()
+
+
+
+# Create a figure and axes for subplots
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 6))
+
+# Plot seasonal variation for every day
+sns.boxplot(x='month', y='load', data=data, showfliers=False, palette='bright', ax=axes[0,0])
+axes[0,0].set_title('Seasonal Variation in Load of MON-SUN Day')
+axes[0,0].set_xlabel('Month')
+axes[0,0].set_ylabel('Load')
+
+# Plot seasonal variation for MON-FRI day
+sns.boxplot(x='month', y='load', data=specific_2_day, showfliers=False, palette='bright', ax=axes[0,1])
+axes[0,1].set_title('Seasonal Variation in Load of MON-FRI Day')
+axes[0,1].set_xlabel('Month')
+axes[0,1].set_ylabel('Load')
+
+# Plot seasonal variation for SAT day
+sns.boxplot(x='month', y='load', data=specific_3_day, showfliers=False, palette='bright', ax=axes[1,0])
+axes[1,0].set_title('Seasonal Variation in Load of SAT Day')
+axes[1,0].set_xlabel('Month')
+axes[1,0].set_ylabel('Load')
+
+# Plot seasonal variation for SUN day
+sns.boxplot(x='month', y='load', data=specific_4_day, showfliers=False, palette='bright', ax=axes[1,1])
+axes[1,1].set_title('Seasonal Variation in Load of SUN Day')
+axes[1,1].set_xlabel('Month')
+axes[1,1].set_ylabel('Load')
+
+# Adjust layout
+plt.tight_layout()
+
+# Save or show the plot
+plt.savefig(f"result_{year_of_first_row}/Seasonal_comparison.png", format="png")
+plt.show()
 
 sns.set_palette("bright")
 # Explore seasonality with a box plot
@@ -61,7 +98,8 @@ plt.title('Seasonal Variation in Load')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal.png", format="png")
-plt.show()
+# plt.show()
+plt.clf()  # Clear the current figure
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_1_day, showfliers = False, palette='bright')
@@ -69,7 +107,8 @@ plt.title('Seasonal Variation in Load of MON Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_1.png", format="png")
-plt.show()
+# plt.show()
+plt.clf()
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_2_day, showfliers = False, palette='bright')
@@ -77,7 +116,9 @@ plt.title('Seasonal Variation in Load of MON-FRI Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_2.png", format="png")
-plt.show()
+# plt.show()
+plt.clf()
+
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_3_day, showfliers = False, palette='bright')
@@ -85,7 +126,8 @@ plt.title('Seasonal Variation in Load of SAT Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_3.png", format="png")
-plt.show()
+# plt.show()
+plt.clf()
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_4_day, showfliers = False, palette='bright')
@@ -93,7 +135,8 @@ plt.title('Seasonal Variation in Load of SUN Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_4.png", format="png")
-plt.show()
+# plt.show()
+plt.clf()
 
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=specific_5_day, showfliers = False, palette='bright')
@@ -101,19 +144,8 @@ plt.title('Seasonal Variation in Load of SAT-SUN Day')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_5.png", format="png")
-plt.show()
-
-# Explore trends with a rolling mean
-rolling_mean = data['load'].rolling(window=30).mean()  # 30-day rolling mean
-plt.figure(figsize=(12, 6))
-plt.plot(data.index, data['load'], label='Load Data')
-plt.plot(data.index, rolling_mean, label='30-Day Rolling Mean', color='orange')
-plt.xlabel('Timestamp')
-plt.ylabel('Load')
-plt.title('Electrical Load Time Series with Rolling Mean')
-plt.legend()
-plt.grid(True)
-plt.show()
+# plt.show()
+plt.clf()
 
 # Explore day of the week patterns
 sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette='bright', hue='day_of_week')
@@ -123,6 +155,26 @@ plt.ylabel('Load')
 plt.xticks(range(7), ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])  # Optional: Label days of the week
 plt.savefig(f"result_{year_of_first_row}/LoadVariation.png", format="png")
 plt.show()
+
+
+
+rolling_mean = data['load'].rolling(window=30).mean()  # 30-day rolling mean
+
+# Create a new figure before plotting
+plt.figure(figsize=(12, 6))
+
+# Add labels, title, legend, and grid
+plt.xlabel('Timestamp')
+plt.ylabel('Load')
+plt.title('Electrical Load Time Series with Rolling Mean')
+plt.legend()
+plt.grid(True)
+
+# Plot load data and rolling mean
+plt.plot(data.index, data['load'], label='Load Data')
+plt.plot(data.index, rolling_mean, label='30-Day Rolling Mean', color='orange')
+plt.show()
+
 
 
 
