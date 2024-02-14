@@ -3,7 +3,7 @@ import os
 
 file_name = "EnergyDayChartAll2023.csv"
 from_format = '%m/%d/%Y %H:%M'
-to_format = '%d/%m/%Y %H.%M'
+to_format = '%d/%m/%Y %H.%M' # (standard)
 
 # Read the CSV file into a DataFrame
 df = pd.read_csv(file_name)

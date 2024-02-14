@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-# Load the prepared data
+# Load the prepared data (hourly)
 data = pd.read_csv('prepared_electric_load_data.csv', parse_dates=['timestamp'], index_col='timestamp')
 
 first_row_timestamp = data.index[0]
@@ -179,3 +179,6 @@ plt.show()
 
 
 data.to_csv('analyse_electric_load_data.csv')
+
+# data.
+

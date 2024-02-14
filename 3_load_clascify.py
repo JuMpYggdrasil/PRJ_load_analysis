@@ -26,6 +26,10 @@ if not os.path.exists(folder_name):
     print(f"Folder '{folder_name}' created.")
 
 
+# Create a list of day labels for the legend
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 
 weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
 weekend_mask = (df.index.dayofweek >= 5)
@@ -48,23 +52,29 @@ on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
 holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
 
+print(f"\n\rEnergy consumption -- Load (kWh)")
+for month in range(1, 13):  # Loop through months (assuming data spans a whole year)
+    monthly_energy = df[df.index.month == month]['load'].sum()
+    print(f"{month} {months[month-1]} {monthly_energy:,.0f} kWh")
+print("\n\r")
+    
 sum_on_peak_data = on_peak_data['load'].sum()
-print(f"Energy of On Peak Data: {sum_on_peak_data:.2f} kWh")
+print(f"Energy of On Peak Data: {sum_on_peak_data:,.2f} kWh")
 
 sum_off_peak_data = off_peak_data['load'].sum()
-print(f"Energy of Off Peak Data: {sum_off_peak_data:.2f} kWh")
+print(f"Energy of Off Peak Data: {sum_off_peak_data:,.2f} kWh")
 
 sum_holiday_data = holiday_data['load'].sum()
-print(f"Energy of holiday Data: {sum_holiday_data:.2f} kWh")
+print(f"Energy of holiday Data: {sum_holiday_data:,.2f} kWh")
 
-print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):.2f} kWh")
+print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):,.2f} kWh")
 
 sum_total_data = df['load'].sum()
-print(f"Sum of all Data: {sum_total_data:.2f} kWh")
+print(f"Sum of all Data: {sum_total_data:,.2f} kWh")
 
 demand_charge_df = df['load'].resample('M').max()
 sum_demand_charge = demand_charge_df.sum()
-print(f"Sum of demand_charge: {sum_demand_charge:.2f} kW")
+print(f"Sum of demand_charge: {sum_demand_charge:,.2f} kW")
 # print(demand_charge_df)
 
 print("")
@@ -121,9 +131,6 @@ for month in range(1, 13):  # Loop through months (assuming data spans a whole y
         month_patterns[month - 1].append(month_data['load'][month_data.index.hour == hour].mean())
 
         
-# Create a list of day labels for the legend
-days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 # Calculate hourly averages for each hour of the day
 weekdays_pattern = []
@@ -178,7 +185,7 @@ plt.figure(figsize=(12, 6))
 for day in range(7):
     day_data_ldc = day_patterns_ldc[day]
     if len(day_data_ldc) > 0:  # Check if the list is not empty
-        print(f"Day {day + 1} length: {len(day_data_ldc)}")
+        # print(f"Day {day + 1} length: {len(day_data_ldc)}")
         plt.plot(percentiles, [day_data_ldc[int(p * len(day_data_ldc) / 100)] for p in percentiles], label=days[day])
         
 plt.title('Load Duration Curve for All Days of the Week')
@@ -201,7 +208,7 @@ plt.figure(figsize=(12, 6))
 for month in range(12):
     month_data_ldc = month_patterns_ldc[month]
     if len(month_data_ldc) > 0:  # Check if the list is not empty
-        print(f"Month {month + 1} length: {len(month_data_ldc)}")
+        # print(f"Month {month + 1} length: {len(month_data_ldc)}")
         plt.plot(percentiles, [month_data_ldc[int(p * len(month_data_ldc) / 100)] for p in percentiles], label=f'Month {month + 1}')
 
 plt.title('Load Duration Curve for All Months')
@@ -256,6 +263,13 @@ plt.show()
 
 
 
+
+
+
+
+
+####################################
+### test section =========== not use
 df_load_with_pv = df
 
 
@@ -270,6 +284,6 @@ df_load_with_pv['load_wo_pv'] = df_load_with_pv.apply(lambda row: np.nan if time
 df_load_with_pv.ffill(inplace=True)
 
 # Display the resulting DataFrame
-print(df_load_with_pv)
+# print(df_load_with_pv)
 
 df_load_with_pv.to_csv('load_without_pv.csv', index=True)

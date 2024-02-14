@@ -11,11 +11,13 @@ def load_and_process_data(file_path):
     # date_format = '%d.%m.%Y %H:%M'
     # date_format = '%d.%m.%Y %H.%M'
     # date_format = '%d/%m/%Y %H:%M'
-    date_format = '%d/%m/%Y %H.%M'
+    date_format = '%d/%m/%Y %H.%M' # default
     # date_format = '%m/%d/%Y %H:%M'
     # date_format = '%m/%d/%Y %H.%M'
     # date_format ='ISO8601'
     data = pd.read_csv(file_path, parse_dates=['Date'], date_format=date_format)
+    data = data.sort_index()
+    
 
     data.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
 

@@ -26,6 +26,8 @@ select_button = tk.Button(root, text="Select .csv File", command=select_csv_file
 select_button.pack(pady=20)
 
 tk.Label(root, text=f"suggest combined_data.csv or <data>_edit.csv").pack()
+tk.Label(root, text=f"result create: prepared_electric_load_data.csv").pack()
+
 
 # Start the Tkinter main loop
 root.mainloop()
