@@ -17,15 +17,24 @@ output_file_name = r'combined_data.csv'
 # holiday_string = "RATE C"
 # header_column_index = [0, 1, 3, 5]
 
-## egat dimond AMR format setting
-skiprows_count = 3
-peak_string = "Peak (kW)"
-off_peak_string = "Offpeak (kW)"
-holiday_string = "Offpeak-Holiday (kW)"
-header_column_index = [0, 1, 2, 3]
+## RAJBURI_COGEN AMR format setting
+skiprows_count = 7
+peak_string = "RATE A"
+off_peak_string = "RATE B"
+holiday_string = "RATE C"
+header_column_index = [0, 1, 3, 5]
 
-# timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA 
-timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
+
+# ## egat dimond AMR format setting
+# skiprows_count = 3
+# peak_string = "Peak (kW)"
+# off_peak_string = "Offpeak (kW)"
+# holiday_string = "Offpeak-Holiday (kW)"
+# header_column_index = [0, 1, 2, 3]
+
+timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA 
+# timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
+
 timestamp_format_standard = '%d/%m/%Y %H.%M'
 timestamp_format_homer = '%d.%m.%Y %H:%M'
 
@@ -96,7 +105,7 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
             # Open the workbook and unmerge cells
             if check_xlsx_files_exist(excel_files_dir):
                 ### for .xlsx
-                workbook = openpyxl.load_workbook(file_path) 
+                workbook = openpyxl.load_workbook(file_path)
                 for sheet in workbook.worksheets:
                     # Create a list of all merged cells
                     merged_cells = [mc for mc in sheet.merged_cells.ranges]
