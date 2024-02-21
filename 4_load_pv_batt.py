@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [0.0000001,150,200,300,400,500,900] # kW
+PV_Install_Capacity = [200] # kW
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -219,7 +219,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     # =============================================== #
     # batt_cap_selected = percentile_60_pv_curtailed_kWh
     batt_capacity_selected = 900 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -238,7 +238,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"")
     
     batt_capacity_selected = 500 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -257,7 +257,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"")
     
     batt_capacity_selected = 400 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -276,7 +276,26 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"")
     
     batt_capacity_selected = 300 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
+
+    # arbitrage only (discharge) 9.00-11.00 in case load > PV
+    batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
+    sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+
+    batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+    sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    
+    total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
+    print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+    print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+    print(f"                             : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
+    print(f"")
+
+    batt_capacity_selected = 250 # kWh
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -295,7 +314,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"")
 
     batt_capacity_selected = 200 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -315,7 +334,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
 
     batt_capacity_selected = 150 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
@@ -335,7 +354,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     
 
     batt_capacity_selected = 100 # kWh
-    batt_cap_selected = batt_capacity_selected * 0.8 # batt performance 80%
+    batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
 
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
