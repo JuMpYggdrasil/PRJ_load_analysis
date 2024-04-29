@@ -4,7 +4,7 @@ import math
 
 # Loop through each day in the year (yyyy-mm-dd)
 start_date = pd.Timestamp('2022-01-11')
-end_date = pd.Timestamp('2022-12-30')
+end_date = pd.Timestamp('2022-01-15')
 
 # PJM: High4of5 for weekdays; High2of3 for weekends.
 # PJM: Pennsylvania, Jersey, Maryland Interconnection
