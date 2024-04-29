@@ -136,6 +136,6 @@ def load_and_process_data(file_path):
 
 if __name__ == '__main__':
     # file_path = 'combined_data.csv'
-    file_path = 'EnergyDayChartAll2022_edit.csv'
+    file_path = 'source\iwrm\EnergyDayChartAll2022_edit.csv'
     load_and_process_data(file_path)
     

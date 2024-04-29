@@ -32,8 +32,8 @@ header_column_index = [0, 1, 3, 5]
 # holiday_string = "Offpeak-Holiday (kW)"
 # header_column_index = [0, 1, 2, 3]
 
-timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA 
-# timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
+# timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA 
+timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
 
 timestamp_format_standard = '%d/%m/%Y %H.%M'
 timestamp_format_homer = '%d.%m.%Y %H:%M'

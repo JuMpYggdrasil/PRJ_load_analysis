@@ -4,7 +4,7 @@ import math
 
 # Loop through each day in the year (yyyy-mm-dd)
 start_date = pd.Timestamp('2022-01-11')
-end_date = pd.Timestamp('2022-12-31')
+end_date = pd.Timestamp('2022-01-15')
 
 # Function to calculate demand pattern for a specific day
 def calculate_demand_pattern_for_day(data, day, Xday=4, Yday=5):
