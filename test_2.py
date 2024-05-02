@@ -1,57 +1,57 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 
-file_path = 'combined_data.csv'
-date_format = '%d/%m/%Y %H.%M'  # Ensure this matches the format in your CSV
-data = pd.read_csv(file_path, parse_dates=['Date'], date_format=date_format)
+# Electricity demand data
+on_peak_demand = 2780 * 12  # kWh, units per year
+off_peak_demand = 2030 * 12  # kWh, units per year
+holiday_demand = 1980 * 12  # kWh, units per year
 
-# data.rename(columns={'Date': 'timestamp', 'Load': 'load'}, inplace=True)
-data.set_index('Date', inplace=True)
+# Create a DatetimeIndex for the year 2023 with hourly frequency
+hourly_index = pd.date_range(start='2023-01-01', end='2023-12-31 23:59:00', freq='15T')
 
-# Interpolate missing values (you may choose a different method if more appropriate)
-if data.isnull().any().any():
-    data.interpolate(inplace=True)
+# Create a DataFrame with the hourly timestamp as index
+df = pd.DataFrame(index=hourly_index)
 
-# Aggregate data to hourly intervals
-df = data.resample('H').mean() 
+# Rename the index column to 'Date'
+df = df.rename_axis('Date')
 
-# Feature Engineering
-df['day_of_week'] = df.index.dayofweek
-df['month'] = df.index.month
-df['hour'] = df.index.hour
-df['rolling_mean'] = df['Load'].rolling(window=24).mean()
+# Masks for weekdays, weekends, on-peak, off-peak, and holidays
+weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
+weekend_mask = (df.index.dayofweek >= 5)
+on_peak_mask = (df.index.hour >= 9) & (df.index.hour < 22)
+off_peak_mask = ~on_peak_mask
 
-# Drop NaN values from rolling mean calculation if needed
-df.dropna(inplace=True)
+# Special dates mask
+specific_dates = ['2023-01-01', '2023-07-04']  # Example dates, you can add more
+specific_dates = pd.to_datetime(specific_dates, format='%Y-%m-%d')
+specific_dates_mask = df.index.isin(specific_dates)
 
-# Select features for clustering
-features = df[['Load', 'hour', 'day_of_week', 'rolling_mean']]
+# Apply the masks to create the "On Peak", "Off Peak" and "Holiday" groups
+on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask]
+off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask]
+holiday_data = df[(specific_dates_mask | weekend_mask)]
 
-# Apply K-means clustering
-kmeans = KMeans(n_clusters=4, n_init=10, random_state=0)
-df['cluster'] = kmeans.fit_predict(features)
+# Calculate the hours count for each group
+on_peak_hours_count = len(on_peak_data) * 15 / 60
+off_peak_hours_count = len(off_peak_data) * 15 / 60
+holiday_hours_count = len(holiday_data) * 15 / 60
 
-# Plot the clusters
-for cluster in sorted(df['cluster'].unique()):
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Cluster {cluster}")
-    cluster_data = df[df['cluster'] == cluster]
-    
-    # Plotting
-    plt.plot(cluster_data.index, cluster_data['Load'], label=f"Cluster {cluster}", linestyle='', marker='o')
-    plt.legend()
-    plt.show()
+# Set all values in _data to the demand per hour
+df.loc[on_peak_data.index, 'Load'] = on_peak_demand / on_peak_hours_count
+df.loc[off_peak_data.index, 'Load'] = off_peak_demand / off_peak_hours_count
+df.loc[holiday_data.index, 'Load'] = holiday_demand / holiday_hours_count
 
-    # Save to CSV
-    output_file = f'cluster_{cluster}_data.csv'
-    
-    # Convert index to a column with the specified format
-    formatted_cluster_data = cluster_data.copy()
-    formatted_cluster_data['Date'] = formatted_cluster_data.index.strftime('%d/%m/%Y %H.%M')
-    formatted_cluster_data.reset_index(drop=True, inplace=True)
-    
-    # Save the DataFrame with the formatted timestamp
-    formatted_cluster_data.to_csv(output_file, index=False)
-    print(f"Cluster {cluster} data saved to {output_file}")
+# Reformat the 'Date' column to the desired format
+df.index = df.index.strftime('%d/%m/%Y %H.%M')
+
+# Log DataFrame to CSV
+df.to_csv('created_load_pattern.csv')
+
+# Plot the data
+plt.figure(figsize=(10, 6))
+plt.plot(df.index, df['Load'], color='blue', linewidth=1)
+plt.title('Electricity Load for the Year 2023')
+plt.xlabel('Date')
+plt.ylabel('Load (kWh)')
+plt.grid(True)
+plt.show()

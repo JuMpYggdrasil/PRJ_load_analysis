@@ -1,8 +1,10 @@
 import pandas as pd
 import os
 
-file_name = "EnergyDayChartAll2023.csv"
+# file_name = "EnergyDayChartAll2023.csv"
+file_name = 'source/created_load_pattern.csv'
 from_format = '%m/%d/%Y %H:%M'
+# from_format = '%Y-%m-%d %H:%M:%S'
 to_format = '%d/%m/%Y %H.%M' # (standard)
 
 # Read the CSV file into a DataFrame
