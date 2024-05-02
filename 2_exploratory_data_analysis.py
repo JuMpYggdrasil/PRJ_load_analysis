@@ -20,6 +20,10 @@ specific_3_day_mask = (data.index.dayofweek == 5) # SAT
 specific_4_day_mask = (data.index.dayofweek == 6) # SUN
 specific_5_day_mask = (data.index.dayofweek >= 5) # SAT-SUN
 
+# Define a day color palette
+dayColor_palette = ['yellow', 'pink','green', 'orange', 'lightblue', 'purple', 'red']
+
+
 specific_1_day = data[specific_1_day_mask]
 specific_2_day = data[specific_2_day_mask]
 specific_3_day = data[specific_3_day_mask]
@@ -148,7 +152,7 @@ plt.savefig(f"result_{year_of_first_row}/Seasonal_specific_5.png", format="png")
 plt.clf()
 
 # Explore day of the week patterns
-sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette='bright', hue='day_of_week')
+sns.boxplot(x='day_of_week', y='load', data=data, showfliers = False, palette=dayColor_palette, hue='day_of_week')
 plt.title('Load Variation by Day of the Week')
 plt.xlabel('Day of the Week')
 plt.ylabel('Load')

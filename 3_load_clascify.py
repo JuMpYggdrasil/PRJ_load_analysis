@@ -30,6 +30,8 @@ if not os.path.exists(folder_name):
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
+# Define a day color palette
+dayColor_palette = ['yellow', 'pink','green', 'orange', 'lightblue', 'purple', 'red']
 
 weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
 weekend_mask = (df.index.dayofweek >= 5)
@@ -157,10 +159,14 @@ plt.xticks(hours)
 plt.savefig(f"result_{year_of_first_row}/average_weekday_weekend.png", format="png")
 plt.show()
 
+
+# Define a day color palette
+dayColor_palette = ['yellow', 'pink','green', 'orange', 'lightblue', 'purple', 'red']
+
 # Plot the hourly data for all 7 days of the week on the same page
 plt.figure(figsize=(12, 6))
 for day in range(7):
-    plt.plot(hours, day_patterns[day], label=days[day], marker='o')
+    plt.plot(hours, day_patterns[day], label=days[day], marker='o', color=dayColor_palette[day])
 
 plt.title('Hourly Electrical Load Profile for All Days of the Week')
 plt.xlabel('Hour of the Day')
@@ -186,7 +192,7 @@ for day in range(7):
     day_data_ldc = day_patterns_ldc[day]
     if len(day_data_ldc) > 0:  # Check if the list is not empty
         # print(f"Day {day + 1} length: {len(day_data_ldc)}")
-        plt.plot(percentiles, [day_data_ldc[int(p * len(day_data_ldc) / 100)] for p in percentiles], label=days[day])
+        plt.plot(percentiles, [day_data_ldc[int(p * len(day_data_ldc) / 100)] for p in percentiles], label=days[day], color=dayColor_palette[day])
         
 plt.title('Load Duration Curve for All Days of the Week')
 plt.xlabel('Percentile')
