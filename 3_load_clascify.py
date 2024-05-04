@@ -54,48 +54,56 @@ on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
 holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
 
-print(f"\n\rEnergy consumption -- Load (kWh)")
-for month in range(1, 13):  # Loop through months (assuming data spans a whole year)
-    monthly_energy = df[df.index.month == month]['load'].sum()
-    print(f"{month} {months[month-1]} {monthly_energy:,.0f} kWh")
-print("\n\r")
+# Open a text file in write mode
+with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f:
+    # Redirect the standard output to the text file
+    import sys
+    sys.stdout = f
     
-sum_on_peak_data = on_peak_data['load'].sum()
-print(f"Energy of On Peak Data: {sum_on_peak_data:,.2f} kWh")
+    print(f"\n\rEnergy consumption -- Load (kWh)")
+    for month in range(1, 13):  # Loop through months (assuming data spans a whole year)
+        monthly_energy = df[df.index.month == month]['load'].sum()
+        print(f"{month} {months[month-1]} {monthly_energy:,.0f} kWh")
+    print("\n\r")
+        
+    sum_on_peak_data = on_peak_data['load'].sum()
+    print(f"Energy of On Peak Data: {sum_on_peak_data:,.2f} kWh")
 
-sum_off_peak_data = off_peak_data['load'].sum()
-print(f"Energy of Off Peak Data: {sum_off_peak_data:,.2f} kWh")
+    sum_off_peak_data = off_peak_data['load'].sum()
+    print(f"Energy of Off Peak Data: {sum_off_peak_data:,.2f} kWh")
 
-sum_holiday_data = holiday_data['load'].sum()
-print(f"Energy of holiday Data: {sum_holiday_data:,.2f} kWh")
+    sum_holiday_data = holiday_data['load'].sum()
+    print(f"Energy of holiday Data: {sum_holiday_data:,.2f} kWh")
 
-print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):,.2f} kWh")
+    print(f"Total Energy: {(sum_on_peak_data+sum_off_peak_data+sum_holiday_data):,.2f} kWh")
 
-sum_total_data = df['load'].sum()
-print(f"Sum of all Data: {sum_total_data:,.2f} kWh")
+    sum_total_data = df['load'].sum()
+    print(f"Sum of all Data: {sum_total_data:,.2f} kWh")
 
-demand_charge_df = df['load'].resample('M').max()
-sum_demand_charge = demand_charge_df.sum()
-print(f"Sum of demand_charge: {sum_demand_charge:,.2f} kW")
-# print(demand_charge_df)
+    demand_charge_df = df['load'].resample('M').max()
+    sum_demand_charge = demand_charge_df.sum()
+    print(f"Sum of demand_charge: {sum_demand_charge:,.2f} kW")
+    # print(demand_charge_df)
 
-print("")
-price_on_peak = unit_price_on_peak * sum_on_peak_data
-print(f"price_on_peak: {price_on_peak:,.2f} THB")
+    print("")
+    price_on_peak = unit_price_on_peak * sum_on_peak_data
+    print(f"price_on_peak: {price_on_peak:,.2f} THB")
 
-price_off_peak = unit_price_off_peak * (sum_off_peak_data+sum_holiday_data)
-print(f"price_off_peak: {price_off_peak:,.2f} THB")
+    price_off_peak = unit_price_off_peak * (sum_off_peak_data+sum_holiday_data)
+    print(f"price_off_peak: {price_off_peak:,.2f} THB")
 
-price_demand_charge = unit_price_demand_charge * sum_demand_charge
-print(f"price_demand_charge: {price_demand_charge:,.2f} THB")
+    price_demand_charge = unit_price_demand_charge * sum_demand_charge
+    print(f"price_demand_charge: {price_demand_charge:,.2f} THB")
 
-price_service_charge = unit_price_service_charge * 12
+    price_service_charge = unit_price_service_charge * 12
 
-total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
-print(f"Total Base Price: {total_price:,.2f} THB")
-print("\tignore FT & vat\n\r")
+    total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
+    print(f"Total Base Price: {total_price:,.2f} THB")
+    print("\tignore FT & vat\n\r")
 
-
+    # After exiting the 'with' block, the standard output will be reverted back to the console
+    
+    
 # Extract data for weekdays (Monday to Friday)
 weekdays = df[weekday_mask & ~specific_dates_mask]
 # sum_weekday = weekdays['load'].sum()
@@ -264,11 +272,8 @@ plt.xlabel('Load')
 plt.ylabel('Frequency')
 
 plt.tight_layout()
-plt.savefig(f"result_{year_of_first_row}/load_distributiom.png", format="png")
+plt.savefig(f"result_{year_of_first_row}/load_distribution.png", format="png")
 plt.show()
-
-
-
 
 
 

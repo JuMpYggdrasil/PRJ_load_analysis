@@ -1,0 +1,52 @@
+
+PV Install_cap: 900.00 kW
+Energy of pv_produce: 1,289,880.00 kWh/year (Verify with PVSyst)
+Energy of pv_produce: 1,433.20 kWh/kWp/year
+Energy of pv_produce: 3.93 kWh/kWp/day
+Energy of pv_curtailed: 1,249,785.84 kWh  (96.89 %)
+Energy of pv_serve_load: 40,094.16 kWh
+  pv_serve_load -- On Peak: 23,126.58 kWh
+  pv_serve_load -- Off Peak: 5,585.84 kWh
+  pv_serve_load -- holiday: 11,381.74 kWh
+Total Base Price: 160,428.60 THB
+	ignore FT & vat
+
+PV < load @9.00: 0 days
+PV > load (in that day): 365 days
+Cycle/year 365 cycles
+5000 Cycle = 13.7 year
+max battery from PV curtailed: 4,832.64 kWh
+  -- suggest Battery Capacity: 3,790 kWh
+
+  -- installed Battery       : 900 kWh
+  -- suggest Battery Saving  : 872,976 THB  (9,700 THB/kWh/10years)
+                             : 212,921 kWh (Curtail 96.89 % -> 80.38 %)
+
+  -- installed Battery       : 500 kWh
+  -- suggest Battery Saving  : 485,878 THB  (9,718 THB/kWh/10years)
+                             : 118,507 kWh (Curtail 96.89 % -> 87.70 %)
+
+  -- installed Battery       : 400 kWh
+  -- suggest Battery Saving  : 388,902 THB  (9,723 THB/kWh/10years)
+                             : 94,854 kWh (Curtail 96.89 % -> 89.54 %)
+
+  -- installed Battery       : 300 kWh
+  -- suggest Battery Saving  : 291,728 THB  (9,724 THB/kWh/10years)
+                             : 71,153 kWh (Curtail 96.89 % -> 91.38 %)
+
+  -- installed Battery       : 250 kWh
+  -- suggest Battery Saving  : 243,106 THB  (9,724 THB/kWh/10years)
+                             : 59,294 kWh (Curtail 96.89 % -> 92.29 %)
+
+  -- installed Battery       : 200 kWh
+  -- suggest Battery Saving  : 194,485 THB  (9,724 THB/kWh/10years)
+                             : 47,435 kWh (Curtail 96.89 % -> 93.21 %)
+
+  -- installed Battery       : 150 kWh
+  -- suggest Battery Saving  : 145,864 THB  (9,724 THB/kWh/10years)
+                             : 35,577 kWh (Curtail 96.89 % -> 94.13 %)
+
+  -- installed Battery       : 100 kWh
+  -- suggest Battery Saving  : 97,243 THB  (9,724 THB/kWh/10years)
+                             : 23,718 kWh (Curtail 96.89 % -> 95.05 %)
+

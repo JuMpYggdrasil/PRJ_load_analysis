@@ -7,12 +7,14 @@ from sklearn.metrics import mean_squared_error
 import joblib
 import math
 
+install_capacityPV_Install_Capacity = 200 # kW
+
 # Load the dataset
 df = pd.read_csv('pv_data_for_train_model.csv')
 
 # Define the input features (X) and the target variable (y)
-X = df[['pv_5', 'pv_6', 'pv_7']]*200
-y = df['pv_max']*200
+X = df[['pv_5', 'pv_6', 'pv_7']]*install_capacityPV_Install_Capacity
+y = df['pv_max']*install_capacityPV_Install_Capacity
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)

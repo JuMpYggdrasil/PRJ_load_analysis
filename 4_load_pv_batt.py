@@ -4,7 +4,10 @@ import numpy as np
 import os
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [200] # kW
+PV_Install_Capacity = [900] # kW
+PVSyst_Energy_per_year_per_kWp = 1433.2 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+
+PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh/year/kWp)/1402.8 change this factory to match PvSyst Energy per year
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -63,12 +66,13 @@ print(df_pv.index.dtype)
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     
-    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * 1.05
+    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
     df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
     df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
 
-    target_month = [1, 6]
+    # target_month = [1,2,3,4,5,6,7,8,9,10,11,12]
+    target_month = [1,6]
     month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 
@@ -95,7 +99,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         plt.show()
 
     sum_pv_produce = df_load['pv_produce'].sum()
-    print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year")
+    print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year (Verify with PVSyst)")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity):,.2f} kWh/kWp/year")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
 
@@ -380,6 +384,15 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
 
 for install_cap in PV_Install_Capacity:
-    print(f"\n\rPV Install_cap: {install_cap:.2f} kW")
-    cal_pv_serve_load(df_pv,df_load,install_cap)
+    # Open a text file in write mode
+    with open(f'result_{year_of_first_row}/load_pv_batt_result.txt', 'w') as f:
+        # Redirect the standard output to the text file
+        import sys
+        sys.stdout = f
+        
+        print(f"\n\rPV Install_cap: {install_cap:.2f} kW")
+        cal_pv_serve_load(df_pv,df_load,install_cap)
+        
+
+    # After exiting the 'with' block, the standard output will be reverted back to the console
 
