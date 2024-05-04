@@ -36,7 +36,7 @@ timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
 # timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
 
 timestamp_format_standard = '%d/%m/%Y %H.%M'
-timestamp_format_homer = '%-d.%-m.%Y %-H:%M'
+timestamp_format_homer = '%d.%m.%Y %H:%M'
 
 def dumb_AMR_format_to_datetime(date_str):
     try:
@@ -60,6 +60,10 @@ def clean_dataframe(df, datetime_col=0):
             # Skip or remove the row, depending on your requirement
             df_cleaned.drop(index, inplace=True)
     return df_cleaned
+
+# Define a function to reformat the date
+def reformat_date(date):
+    return date.strftime("{d:d}.{m:d}.%Y %H:%M").format(m=date.month, d=date.day)
 
 def select_directory(files_dir):
     directory_path = filedialog.askdirectory(initialdir=os.getcwd(), title="Select Directory")
@@ -166,7 +170,10 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
     ## convert string to dt object -> sort -> convert back to string
     df['Date'] = pd.to_datetime(df['Date'], format=timestamp_format_homer)
     df = df.sort_values(by='Date')
-    df['Date'] = df['Date'].dt.strftime(timestamp_format_homer)
+    # df['Date'] = df['Date'].dt.strftime(timestamp_format_homer)
+    
+    # Apply the function to the 'Date' column
+    df['Date'] = df['Date'].apply(reformat_date)
     
 
     # Save the modified DataFrame back to a CSV file
