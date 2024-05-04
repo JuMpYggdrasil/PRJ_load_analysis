@@ -36,7 +36,7 @@ timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
 # timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
 
 timestamp_format_standard = '%d/%m/%Y %H.%M'
-timestamp_format_homer = '%d.%m.%Y %H:%M'
+timestamp_format_homer = '%-d.%-m.%Y %-H:%M'
 
 def dumb_AMR_format_to_datetime(date_str):
     try:
