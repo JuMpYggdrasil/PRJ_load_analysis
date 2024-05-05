@@ -2,12 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import json
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [900] # kW
+PV_Install_Capacity = [55,1900] # kW
 PVSyst_Energy_per_year_per_kWp = 1433.2 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
-
-PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh/year/kWp)/1402.8 change this factory to match PvSyst Energy per year
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -15,6 +14,10 @@ unit_price_off_peak = 2.6037
 unit_price_demand_charge = 132.93
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+
+PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh/year/kWp)/1402.8 change this factory to match PvSyst Energy per year
+
 
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)
@@ -62,7 +65,13 @@ selected_month_mask = True # for all month
 print(df_load.index.dtype)
 print(df_pv.index.dtype)
 
+# Specify the file path
+file_path = "param_for_economic.json"
 
+# Check if the file exists
+if os.path.exists(file_path):
+    # Delete the file
+    os.remove(file_path)
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     
@@ -97,17 +106,36 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         plt.savefig(f"result_{year_of_first_row}/Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}.png", format="png")
         # Display the plot
         plt.show()
+        
+    
 
     sum_pv_produce = df_load['pv_produce'].sum()
+    capacity_factor = (sum_pv_produce/pv_install_capacity/8760*100)
     print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year (Verify with PVSyst)")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity):,.2f} kWh/kWp/year")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
-
+    print(f"Capacity Factor: {capacity_factor:,.2f} %")
     sum_pv_curtailed = df_load['pv_curtailed'].sum()
     print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({(sum_pv_curtailed/sum_pv_produce*100):.2f} %)")
 
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
+    
+    param_econ = {
+        "installed_capacity": pv_install_capacity,
+        "capacity_factor": capacity_factor,
+        "energy_of_pv_produce": sum_pv_produce,
+        "energy_of_pv_serve_load": sum_pv_serve_load
+    }
+    
+
+    # Append the data to the JSON file
+    with open(file_path, "a") as json_file:
+        json.dump(param_econ, json_file)
+        json_file.write("\n")
+    
+
+    
 
 
 

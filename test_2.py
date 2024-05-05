@@ -1,20 +1,20 @@
-import pandas as pd
+import numpy_financial as npf
 
-# Define the original timestamp format and the desired format
-timestamp_format_standard = "%Y-%m-%d %H:%M:%S"
-timestamp_format_homer = "%Y-{m:d}-{d:d} %H:%M"
-timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
+# Example cash_flow_list
+cash_flow_list = [-1815000.0, 278493.94243439997, 276930.96622686, 229992.99001932004, 228430.01381178002, 226867.03760424, 225304.0613967001, 223741.08518916008, 222178.10898162005, 220615.13277408015, -11947.843433459871, 217489.1803590001, 215926.20415146012, 214363.22794392018, 212800.2517363802, 211237.27552884017, 209674.29932130018, 208111.32311376024, 206548.34690622022, 204985.37069868023, 203422.39449114027, 201859.4182836003, 200296.44207606028, 198733.46586852032, 197170.48966098033, 195607.51345344033]
 
-output_file_name = r'combined_data.csv'
-df = pd.read_csv(output_file_name)
-# Assuming df is your DataFrame and 'Date' column needs reformatting
-df['Date'] = pd.to_datetime(df['Date'], format=timestamp_format_AMR)
+# Calculate payback period
+def calculate_payback_period(cash_flow_list):
+    cumulative_cash_flow = 0
+    payback_period = 0
 
-# Define a function to reformat the date
-def reformat_date(date):
-    return date.strftime(timestamp_format_homer).format(m=date.month, d=date.day)
+    for cash_flow in cash_flow_list:
+        cumulative_cash_flow += cash_flow
+        if cumulative_cash_flow >= 0:
+            break
+        payback_period += 1
 
-# Apply the function to the 'Date' column
-df['Date'] = df['Date'].apply(reformat_date)
+    return payback_period
 
-print(df)
+payback_period = calculate_payback_period(cash_flow_list)
+print("Payback Period:", payback_period, "years")
