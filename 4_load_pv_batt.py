@@ -5,7 +5,7 @@ import os
 import json
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [55,1900] # kW
+PV_Install_Capacity = [55] # kW
 PVSyst_Energy_per_year_per_kWp = 1433.2 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
