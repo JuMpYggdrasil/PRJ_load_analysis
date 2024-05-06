@@ -24,7 +24,7 @@ o_and_m_percentage = 2.5   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 3 #
 
-def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,ENplot=False):
+def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=False):
     # Initialize lists to store data
     years = []
     solar_degradation_list = []
@@ -210,7 +210,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
 
         table = plt.table(cellText=df.values,rowColours=row_colors, colLabels=df.columns, rowLabels=df.index, loc='center', cellLoc='right', colColours=colors, colWidths=[0.2, 0.2, 0.15])
         plt.axis('off')  # Hide the axis
-        plt.title('Financial Metrics for Solar PV Project', fontsize=16, pad=20, loc='center')  # Set pad to adjust the distance between the title and the table
+        plt.title('Economic Indicators for Solar PV Project', fontsize=16, pad=20, loc='center')  # Set pad to adjust the distance between the title and the table
         table.scale(1, 1.8)  # Adjust the scale of the table
         plt.tight_layout(rect=[0, 0.1, 1, 0.9])  # Adjust the layout to make room for the title
         plt.show()
@@ -258,20 +258,20 @@ for data in data_list:
         print("Capacity Factor:", capacity_factor)
         gen_sensitivity=[-10,-5,0,5,10]
         # Perform calculations or other operations here
-        irr_1, pbp_1 = calculate_economic(installed_capacity,capacity_factor*0.96,energy_of_pv_serve_load)
-        irr_2, pbp_2 = calculate_economic(installed_capacity,capacity_factor*0.98,energy_of_pv_serve_load)
-        irr_3, pbp_3 = calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,ENplot=True)
-        irr_4, pbp_4 = calculate_economic(installed_capacity,capacity_factor*1.02,energy_of_pv_serve_load)
-        irr_5, pbp_5 = calculate_economic(installed_capacity,capacity_factor*1.04,energy_of_pv_serve_load)
+        irr_1, pbp_1 = calculate_economic(installed_capacity,capacity_factor*0.96,energy_of_pv_serve_load,tariff_rate)
+        irr_2, pbp_2 = calculate_economic(installed_capacity,capacity_factor*0.98,energy_of_pv_serve_load,tariff_rate)
+        irr_3, pbp_3 = calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=True)
+        irr_4, pbp_4 = calculate_economic(installed_capacity,capacity_factor*1.02,energy_of_pv_serve_load,tariff_rate)
+        irr_5, pbp_5 = calculate_economic(installed_capacity,capacity_factor*1.04,energy_of_pv_serve_load,tariff_rate)
         irr_ = [irr_1,irr_2,irr_3,irr_4,irr_5]
         pbp_ = [pbp_1,pbp_2,pbp_3,pbp_4,pbp_5]
         
         
         # Plotting
         plt.plot(gen_sensitivity, irr_, marker='o')  # Plotting with markers
-        plt.xlabel('Generation Sensitivity')
+        plt.xlabel('Energy Production Sensitivity')
         plt.ylabel('IRR (%)')
-        plt.title('IRR vs Generation Sensitivity')
+        plt.title('IRR vs Energy Production Sensitivity')
         plt.grid(True)
         # Set y-axis limit starting from 0
         plt.ylim(0, max(irr_) + 1)  # Set the y-axis limit from 0 to maximum value of irr_ plus some buffer
@@ -280,12 +280,13 @@ for data in data_list:
         
         # Plotting
         plt.plot(gen_sensitivity, pbp_, marker='o')  # Plotting with markers
-        plt.xlabel('Generation Sensitivity')
+        plt.xlabel('Energy Production Sensitivity')
         plt.ylabel('PBP (year)')
-        plt.title('PBP vs Generation Sensitivity')
+        plt.title('PBP vs Energy Production Sensitivity')
         plt.grid(True)
         # Set y-axis limit starting from 0
         plt.ylim(0, max(pbp_) + 1)  # Set the y-axis limit from 0 to maximum value of pbp_ plus some buffer
 
         plt.show()
+        
         
