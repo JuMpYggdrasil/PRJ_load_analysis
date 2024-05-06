@@ -10,7 +10,10 @@ import math
 # Inputs
 # installed_capacity = 55  # kW
 # capacity_factor = 15.5217   # %
+
+## tariff_rate_average = (tariff_rate_on_peak*255+tariff_rate_off_peak*110)/365 (add more 0.6 for vat)
 tariff_rate = 3.8 # THB/units     <==    ##### edit #####
+
 
 # Inputs config
 project_time_years = 25 # years
@@ -23,6 +26,8 @@ inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2.5   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 3 #
+
+
 
 def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=False):
     # Initialize lists to store data
@@ -38,8 +43,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     initial_investment = installed_capacity * sale_price_per_kw
     
     ## Calculate Annual Electricity Generation
-    annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
-    # annual_generation = energy_of_pv_serve_load # focus PV meet load
+    # annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    annual_generation = energy_of_pv_serve_load # focus PV meet load
 
     # Calculate payback period
     def calculate_payback_period(cash_flow_list):
@@ -65,14 +70,13 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         # Convert fraction to years and months
         years = int(payback_period_fraction)
         months = math.ceil((payback_period_fraction - years) * 12)
-        print("xx ")
-        print(payback_period, years, months, payback_period_fraction)
+        # print(payback_period, years, months, payback_period_fraction)
 
         return payback_period, years, months, payback_period_fraction
 
+    print("")
     # Calculate cash flows for each year
     for year in range(0, project_time_years + 1):
-        print("")
         # Calculate Solar Degradation for the year
         if year == 0:
             solar_degradation = 1
@@ -94,7 +98,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         
         # Calculate O&M Cost for the year starting from year o_and_m_start_at_year
         if year >= o_and_m_start_at_year:
-            o_and_m_cost = initial_investment * o_and_m_percentage/100 * (1 + o_and_m_escalation/100) ** (year - 3)
+            o_and_m_cost = initial_investment * o_and_m_percentage/100 * ((1 + o_and_m_escalation/100) ** (year - 3))
             # Add Inverter Replacement Cost in the 10th year
             if year == 10:
                 inverter_replacement = inverter_replacement_cost * installed_capacity
@@ -256,37 +260,109 @@ for data in data_list:
     if installed_capacity is not None and capacity_factor is not None:
         print("Installed Capacity:", installed_capacity)
         print("Capacity Factor:", capacity_factor)
-        gen_sensitivity=[-10,-5,0,5,10]
-        # Perform calculations or other operations here
-        irr_1, pbp_1 = calculate_economic(installed_capacity,capacity_factor*0.96,energy_of_pv_serve_load,tariff_rate)
-        irr_2, pbp_2 = calculate_economic(installed_capacity,capacity_factor*0.98,energy_of_pv_serve_load,tariff_rate)
-        irr_3, pbp_3 = calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=True)
-        irr_4, pbp_4 = calculate_economic(installed_capacity,capacity_factor*1.02,energy_of_pv_serve_load,tariff_rate)
-        irr_5, pbp_5 = calculate_economic(installed_capacity,capacity_factor*1.04,energy_of_pv_serve_load,tariff_rate)
-        irr_ = [irr_1,irr_2,irr_3,irr_4,irr_5]
-        pbp_ = [pbp_1,pbp_2,pbp_3,pbp_4,pbp_5]
-        
-        
-        # Plotting
-        plt.plot(gen_sensitivity, irr_, marker='o')  # Plotting with markers
-        plt.xlabel('Energy Production Sensitivity')
+        gen_sensitivity = [-10, -5, 0, 5, 10]
+        irr_results = []
+        pbp_results = []
+
+        for sensitivity in gen_sensitivity:
+            if sensitivity == 0:
+                irr, pbp = calculate_economic(installed_capacity, capacity_factor*(1 + sensitivity/100), energy_of_pv_serve_load*(1 + sensitivity/100), tariff_rate,ENplot=True)
+            else:
+                irr, pbp = calculate_economic(installed_capacity, capacity_factor*(1 + sensitivity/100), energy_of_pv_serve_load*(1 + sensitivity/100), tariff_rate)
+            irr_results.append(irr)
+            pbp_results.append(pbp)
+            
+        print('irr',irr_results)
+        print('pbp',pbp_results)
+
+        # Plotting IRR
+        plt.plot(gen_sensitivity, irr_results, marker='o')
+        plt.xlabel('Energy Production Sensitivity (%)')
         plt.ylabel('IRR (%)')
         plt.title('IRR vs Energy Production Sensitivity')
         plt.grid(True)
-        # Set y-axis limit starting from 0
-        plt.ylim(0, max(irr_) + 1)  # Set the y-axis limit from 0 to maximum value of irr_ plus some buffer
-
+        plt.ylim(0, max(irr_results) + 1)
         plt.show()
-        
-        # Plotting
-        plt.plot(gen_sensitivity, pbp_, marker='o')  # Plotting with markers
-        plt.xlabel('Energy Production Sensitivity')
+
+        # Plotting PBP
+        plt.plot(gen_sensitivity, pbp_results, marker='o')
+        plt.xlabel('Energy Production Sensitivity (%)')
         plt.ylabel('PBP (year)')
         plt.title('PBP vs Energy Production Sensitivity')
         plt.grid(True)
-        # Set y-axis limit starting from 0
-        plt.ylim(0, max(pbp_) + 1)  # Set the y-axis limit from 0 to maximum value of pbp_ plus some buffer
-
+        plt.ylim(0, max(pbp_results) + 1)
         plt.show()
+
         
         
+        # price_sensitivity = [-15, -10, -5, 0, 5, 10, 15]
+        # irr_results = []
+        # pbp_results = []
+
+        # for sensitivity in price_sensitivity:
+        #     tariff_adjusted = tariff_rate * (1 + sensitivity / 100)
+        #     irr, pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_adjusted)
+        #     irr_results.append(irr)
+        #     pbp_results.append(pbp)
+
+        # # Define colors based on sign of sensitivity
+        # colors = ['lightgreen' if sensitivity < 0 else 'darkgreen' for sensitivity in price_sensitivity]
+
+        # # Plotting IRR
+        # plt.plot(price_sensitivity, irr_results, marker='o', color=colors)
+        # plt.xlabel('Energy Price Sensitivity (%)')
+        # plt.ylabel('IRR (%)')
+        # plt.title('IRR vs Energy Price Sensitivity')
+        # plt.grid(True)
+        # plt.ylim(0, max(irr_results) + 1)
+        # plt.show()
+
+        # # Plotting PBP
+        # plt.plot(price_sensitivity, pbp_results, marker='o', color=colors)
+        # plt.xlabel('Energy Price Sensitivity (%)')
+        # plt.ylabel('PBP (year)')
+        # plt.title('PBP vs Energy Price Sensitivity')
+        # plt.grid(True)
+        # plt.ylim(0, max(pbp_results) + 1)
+        # plt.show()
+        
+        price_sensitivity = [-15, -10, -5, 0, 5, 10, 15]
+        irr_results = []
+        pbp_results = []
+
+        for sensitivity in price_sensitivity:
+            tariff_adjusted = tariff_rate * (1 + sensitivity / 100)
+            irr, pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_adjusted)
+            irr_results.append(irr)
+            pbp_results.append(pbp)
+
+        # Define colors based on sign of sensitivity
+        colors = ['lightgreen' if sensitivity < 0 else 'darkgreen' for sensitivity in price_sensitivity]
+
+        # Plotting IRR points
+        for sensitivity, irr, color in zip(price_sensitivity, irr_results, colors):
+            plt.plot(sensitivity, irr, marker='o', color=color)
+
+        # Plotting lines connecting IRR points
+        plt.plot(price_sensitivity, irr_results, color='green', linestyle='-', linewidth=1)
+
+        plt.xlabel('Energy Price Sensitivity (%)')
+        plt.ylabel('IRR (%)')
+        plt.title('IRR vs Energy Price Sensitivity')
+        plt.grid(True)
+        plt.ylim(0, max(irr_results) + 1)
+        plt.show()
+
+        # Plotting PBP points
+        for sensitivity, pbp, color in zip(price_sensitivity, pbp_results, colors):
+            plt.plot(sensitivity, pbp, marker='o', color=color)
+
+        # Plotting lines connecting PBP points
+        plt.plot(price_sensitivity, pbp_results, color='green', linestyle='-', linewidth=1)
+
+        plt.xlabel('Energy Price Sensitivity (%)')
+        plt.ylabel('PBP (year)')
+        plt.title('PBP vs Energy Price Sensitivity')
+        plt.grid(True)
+        plt.ylim(0, max(pbp_results) + 1)
+        plt.show()
