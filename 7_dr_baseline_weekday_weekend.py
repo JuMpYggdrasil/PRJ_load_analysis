@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import math
 
 # Loop through each day in the year (yyyy-mm-dd)
-start_date = pd.Timestamp('2022-01-11')
-end_date = pd.Timestamp('2022-01-15')
+start_date = pd.Timestamp('2023-01-11')
+end_date = pd.Timestamp('2023-01-31')
 
 # PJM: High4of5 for weekdays; High2of3 for weekends.
 # PJM: Pennsylvania, Jersey, Maryland Interconnection
