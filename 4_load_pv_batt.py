@@ -5,8 +5,8 @@ import os
 import json
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [55] # kW
-PVSyst_Energy_per_year_per_kWp = 1433.2 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+PV_Install_Capacity = [500] # kW
+PVSyst_Energy_per_year_per_kWp = 1248 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -413,7 +413,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
 for install_cap in PV_Install_Capacity:
     # Open a text file in write mode
-    with open(f'result_{year_of_first_row}/load_pv_batt_result.txt', 'w') as f:
+    with open(f'result_{year_of_first_row}/load_pv_batt_result_{install_cap}.txt', 'w') as f:
         # Redirect the standard output to the text file
         import sys
         sys.stdout = f
