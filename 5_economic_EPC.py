@@ -11,7 +11,7 @@ import math
 # installed_capacity = 55  # kW
 # capacity_factor = 15.5217   # %
 
-## tariff_rate_average = (tariff_rate_on_peak*255+tariff_rate_off_peak*110)/365 (add more 0.6 for vat)
+## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
 tariff_rate = 3.8 # THB/units     <==    ##### edit #####
 
 
@@ -25,7 +25,7 @@ solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2.5   # %
 o_and_m_escalation = 0   # Escalation rate
-o_and_m_start_at_year = 3 #
+o_and_m_start_at_year = 1 #
 
 
 
@@ -43,8 +43,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     initial_investment = installed_capacity * sale_price_per_kw
     
     ## Calculate Annual Electricity Generation
-    # annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
-    annual_generation = energy_of_pv_serve_load # focus PV meet load
+    annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    # annual_generation = energy_of_pv_serve_load # focus PV meet load
 
     # Calculate payback period
     def calculate_payback_period(cash_flow_list):
