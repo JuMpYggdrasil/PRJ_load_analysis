@@ -8,22 +8,23 @@ import json
 import math
 
 # Inputs
-# installed_capacity = 55  # kW
-# capacity_factor = 15.5217   # %
+# installed_capacity_set = 10  # kW
+# capacity_factor_set = 14.5   # %
+## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
-tariff_rate = 3.8 # THB/units     <==    ##### edit #####
+tariff_rate = 4.88 # THB/units     <==    ##### edit #####
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 30000     # THB/kW  <==    ##### from contractor #####
-margin = 10             # %
+cost_per_kw = 29000     # THB/kW  <==    ##### from contractor #####
+margin = 20.6896551724138 # %
 sale_price_per_kw =  cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
-o_and_m_percentage = 2.5   # %
+o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
@@ -44,6 +45,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     
     ## Calculate Annual Electricity Generation
     annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    print("energy per year",annual_generation/1000,"MWh")
     # annual_generation = energy_of_pv_serve_load # focus PV meet load
 
     # Calculate payback period
@@ -175,7 +177,9 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         plt.show()
 
     print("Installed Capacity: {:,.2f} kWp".format(installed_capacity))
-    print("Initial Investment: {:,.2f} THB".format(initial_investment))
+    total_energy = sum(annual_energy_year_list)
+    print("Total Energy: {:,.2f} MWp".format(total_energy/1000))
+    print("Capital Investment: {:,.2f} THB".format(initial_investment))
     average_saving_pv = sum(revenue_of_energy_list[1:])/len(revenue_of_energy_list[1:])
     print("Average Savings: {:,.2f} THB/Year".format(average_saving_pv))
     O_M_average_cost = (sum(o_and_m_cost_list)-inverter_replacement)/len(o_and_m_cost_list[o_and_m_start_at_year:])
@@ -185,17 +189,18 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     inverter_replacement_at_first_year = inverter_replacement/((1+o_and_m_escalation/100)**10)
     print("Inverter Replacement: {:,.2f} THB".format(inverter_replacement_at_first_year))
     total_25_year_saving = sum(revenue_of_energy_list)-sum(o_and_m_cost_list)
-    print("Total 25-Year Savings: {:,.2f} THB".format(total_25_year_saving))
+    print("Total {:,.0f}-Year Savings: {:,.2f} THB".format(project_time_years,total_25_year_saving))
 
     print("IRR: {:.2f}%".format(irr_percent))
     ROI = (total_25_year_saving-initial_investment)/initial_investment*100
     print("ROI: {:.2f}%".format(ROI))
     print("Payback Period: {:.2f} years ({:.2f})".format(payback_period,pbp_frac))
+    lifetime_year_saving = "Total "+str(project_time_years)+"-Year Savings"
     
     data = {
-        "Metric": ["Installed Capacity", "Initial Investment", "Average Savings", "O&M Cost", "Average Net Savings", "Inverter Replacement", "Total 25-Year Savings", "ROI", "IRR", "Payback Period"],
-        "Value": ["{:,.2f}".format(installed_capacity), "{:,.2f}".format(initial_investment), "{:,.2f}".format(average_saving_pv), "{:,.2f}".format(O_M_average_cost), "{:,.2f}".format(average_net_saving), "{:,.2f}".format(inverter_replacement_at_first_year), "{:,.2f}".format(total_25_year_saving), "{:,.2f}".format(ROI), "{:,.2f}".format(irr_percent), "{:,.0f} years {:,.0f} months".format(pbp_yr,pbp_mo)],
-        "Unit": ["kWp", "THB", "THB/Year", "THB/Year", "THB/Year", "THB", "THB", "%", "%", ""]
+        "Metric": ["Installed Capacity", "Total Energy", "Capital Investment", "Average Savings", "O&M Cost", "Average Net Savings", "Inverter Replacement", lifetime_year_saving, "ROI", "IRR", "Payback Period"],
+        "Value": ["{:,.2f}".format(installed_capacity),"{:,.2f}".format(total_energy/1000), "{:,.2f}".format(initial_investment), "{:,.2f}".format(average_saving_pv), "{:,.2f}".format(O_M_average_cost), "{:,.2f}".format(average_net_saving), "{:,.2f}".format(inverter_replacement_at_first_year), "{:,.2f}".format(total_25_year_saving), "{:,.2f}".format(ROI), "{:,.2f}".format(irr_percent), "{:,.0f} years {:,.0f} months".format(pbp_yr,pbp_mo)],
+        "Unit": ["kWp","MWh", "THB", "THB/Year", "THB/Year", "THB/Year", "THB", "THB", "%", "%", ""]
     }
 
     if ENplot:
@@ -253,6 +258,7 @@ with open(file_path, "r") as json_file:
 for data in data_list:
     installed_capacity = data.get("installed_capacity")  # Get installed_capacity field
     capacity_factor = data.get("capacity_factor")  # Get capacity_factor field
+        
     # energy_of_pv_produce = data.get("energy_of_pv_produce")
     energy_of_pv_serve_load = data.get("energy_of_pv_serve_load")
     
