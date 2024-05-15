@@ -6,58 +6,96 @@ import math
 start_date = pd.Timestamp('2022-02-15')
 end_date = pd.Timestamp('2022-12-31')
 
+# Dates to be excluded
+excluded_dates = [
+    pd.Timestamp('2022-02-18'),
+    pd.Timestamp('2022-02-19'),
+]
+
 # Function to calculate demand pattern for a specific day
-def calculate_demand_pattern_for_day(data, day, Xday=4, Yday=10):
+def calculate_demand_pattern_for_day(data, day, Xday=4, Yday=7):
+    no_excluded_dates=0
     # Get the dates 10 days before the given day
-    interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday)
+    interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday+no_excluded_dates)
+    
+    # Exclude the dates
+    interested_filtered_dates = interested_dates.difference(excluded_dates)
+    while len(interested_filtered_dates)<Yday:
+        no_excluded_dates+=1
+        # Get the dates 10 days before the given day
+        interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday+no_excluded_dates)
+        
+        # Exclude the dates
+        interested_filtered_dates = interested_dates.difference(excluded_dates)
+        
 
     # Filter data for the range of interested_dates
-    interested_data = data[data['timestamp'].dt.date.isin(interested_dates.date)]
-
-
+    interested_data = data[data['timestamp'].dt.date.isin(interested_filtered_dates.date)]
 
     # Calculate the sum of load for each day in the interested dates
     sum_load_per_day = interested_data.groupby(interested_data['timestamp'].dt.date)['load'].sum()
+    
+    sum_load_sorted = sum_load_per_day.sort_values(ascending=False)
+    sum_load_sorted_X = sum_load_sorted[:Xday]
+    sum_load_sorted_X_check = sum_load_sorted_X.iloc[Xday-1]
+    # if sum_load_sorted_X_check < 0.1:
+    #     print("sum_load_sorted_X",sum_load_sorted_X,"->",sum_load_sorted_X_check)
+    
+    i=1
+    while sum_load_sorted_X_check < 0.1:
+        no_excluded_dates=0
+
+        # Get the dates 10 days before the given day
+        interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday+i+no_excluded_dates)
+        # Exclude the dates
+        interested_filtered_dates = interested_dates.difference(excluded_dates)
+        while len(interested_filtered_dates)<Yday:
+            no_excluded_dates+=1
+            # Get the dates 10 days before the given day
+            interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday+i+no_excluded_dates)
+            
+            # Exclude the dates
+            interested_filtered_dates = interested_dates.difference(excluded_dates)
+        
+
+        # Filter data for the range of interested_dates
+        interested_data = data[data['timestamp'].dt.date.isin(interested_filtered_dates.date)]
+
+        # Calculate the sum of load for each day in the interested dates
+        sum_load_per_day = interested_data.groupby(interested_data['timestamp'].dt.date)['load'].sum()
+        
+        
+        sum_load_sorted = sum_load_per_day.sort_values(ascending=False)
+        sum_load_sorted_X = sum_load_sorted[:Xday]
+        sum_load_sorted_X_check = sum_load_sorted_X.iloc[Xday-1]
+        # print("sum_load_sorted_X",sum_load_sorted_X,"->",sum_load_sorted_X_check)
+        
+        i+=1
+        if i>10:
+            break
+        if len(sum_load_sorted_X)>=len(interested_data):
+            break
+            
+        
+    
+    
     
     # Sort interested dates by sum of load from max to min
     sorted_dates = sum_load_per_day.sort_values(ascending=False).index
     
     # Keep only the maximum X dates
     top_X_dates = sorted_dates[:Xday]
-
+    
     # Filter data for top X dates
     top_X_data = interested_data[interested_data['timestamp'].dt.date.isin(top_X_dates)]
-    # print(top_X_data['load'])
-    min_load_value = top_X_data['load'].min()
+
+    # count_top_X_data = len(top_X_data)
+    # min_load_value = top_X_data['load'].min()
+    # lowest_5_load_values = top_X_data['load'].nsmallest(5)
+    # highest_5_load_values = top_X_data['load'].nlargest(5)
+
+
     
-   
-    # i=1
-    # while min_load_value < 0.1:
-    #     # Get the dates 10 days before the given day
-    #     interested_dates = pd.date_range(end=day - pd.Timedelta(days=1), periods=Yday+i)
-
-    #     # Filter data for the range of interested_dates
-    #     interested_data = data[data['timestamp'].dt.date.isin(interested_dates.date)]
-
-
-
-    #     # Calculate the sum of load for each day in the interested dates
-    #     sum_load_per_day = interested_data.groupby(interested_data['timestamp'].dt.date)['load'].sum()
-        
-    #     # Sort interested dates by sum of load from max to min
-    #     sorted_dates = sum_load_per_day.sort_values(ascending=False).index
-        
-    #     # Keep only the maximum X dates
-    #     top_X_dates = sorted_dates[:Xday]
-
-    #     # Filter data for top X dates
-    #     top_X_data = interested_data[interested_data['timestamp'].dt.date.isin(top_X_dates)]
-        
-    #     min_load_value = top_X_data['load'].min()
-    #     print(top_X_data['load'])
-    #     i+=1
-    #     if i>20:
-    #         break
     
     # Calculate average load pattern for top X dates
     average_load_pattern = top_X_data.groupby(top_X_data['timestamp'].dt.hour)['load'].mean()
