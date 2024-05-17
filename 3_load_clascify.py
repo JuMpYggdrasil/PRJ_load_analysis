@@ -230,7 +230,7 @@ plt.xlabel('Percentile')
 plt.ylabel('Load (kW)')
 plt.legend()
 plt.grid(True)
-mark_line_val = 400
+mark_line_val = 00
 plt.axhline(y=mark_line_val, color='gray', linestyle='--', label=f'Load = {mark_line_val:.1f} kW')
 
 plt.savefig(f"result_{year_of_first_row}/load_duration_curve_all_months.png", format="png")
