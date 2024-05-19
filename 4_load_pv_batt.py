@@ -5,7 +5,7 @@ import os
 import json
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [250,260,270,280,290] # kW
+PV_Install_Capacity = [800] # kW
 PVSyst_Energy_per_year_per_kWp = 1242 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
@@ -135,11 +135,45 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
         json_file.write("\n")
     
 
-    
-
-
 
     df = df_load
+    
+    # Calculate hourly averages for each hour of the day for all 7 days of the week
+    average_load_patterns = []
+    average_pv_patterns = []
+    day_data = df
+    for hour in range(24):
+        average_load_patterns.append(day_data['load'][day_data.index.hour == hour].mean())
+        average_pv_patterns.append(day_data['pv_produce'][day_data.index.hour == hour].mean())
+        
+    # Create a list of hours (0 to 23) for the x-axis
+    hours = list(range(24))
+
+    # Plot the hourly data for weekdays and weekends
+    plt.figure(figsize=(12, 6))
+    plt.plot(hours, average_load_patterns, label='average_load_patterns', marker='o')
+    plt.plot(hours, average_pv_patterns, label='average_pv_patterns', marker='o')
+    # Highlight the area where average_pv_patterns > average_load_patterns
+    # Highlight the area where average_pv_patterns > average_load_patterns
+    plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
+                 where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
+                 color='darkviolet', alpha=0.5)
+
+    # Add a hatched pattern using an additional fill_between
+    plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
+                    where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
+                    color='none', hatch='///', edgecolor='purple')
+
+    plt.title('Hourly Electrical Load  & PV Profile')
+    plt.xlabel('Hour of the Day')
+    plt.ylabel('Average Load & PV (kW)')
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(hours)
+    plt.savefig(f"result_{year_of_first_row}/load_pv.png", format="png")
+    plt.show()
+        
+        
 
     weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
     weekend_mask = (df.index.dayofweek >= 5)
