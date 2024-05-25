@@ -1,2 +1,11 @@
 {"installed_capacity": 200, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 248400.00000000003, "energy_of_pv_serve_load": 242994.01089054067}
 {"installed_capacity": 280, "capacity_factor": 14.178082191780822, "energy_of_pv_produce": 347760.0, "energy_of_pv_serve_load": 310976.0087314629}
+{"installed_capacity": 500.0, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 621000.0000000001, "energy_of_pv_serve_load": 380011.9749785414}
+{"installed_capacity": 250.0, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 310500.00000000006, "energy_of_pv_serve_load": 289663.11524361896}
+{"installed_capacity": 375.0, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 465750.00000000006, "energy_of_pv_serve_load": 353078.76570851024}
+{"installed_capacity": 312.5, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 388125.00000000006, "energy_of_pv_serve_load": 328978.2636534378}
+{"installed_capacity": 281.25, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 349312.50000000006, "energy_of_pv_serve_load": 311759.905523032}
+{"installed_capacity": 265.625, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 329906.25000000006, "energy_of_pv_serve_load": 301362.0536706899}
+{"installed_capacity": 273.4375, "capacity_factor": 14.178082191780822, "energy_of_pv_produce": 339609.375, "energy_of_pv_serve_load": 306741.70032461674}
+{"installed_capacity": 277.34375, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 344460.93750000006, "energy_of_pv_serve_load": 309287.83472272905}
+{"installed_capacity": 275.390625, "capacity_factor": 14.178082191780824, "energy_of_pv_produce": 342035.15625000006, "energy_of_pv_serve_load": 308026.0799840438}

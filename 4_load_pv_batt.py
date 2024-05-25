@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import json
+from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
 PV_Install_Capacity = [200,280] # kW
@@ -73,7 +74,7 @@ if os.path.exists(file_path):
     # Delete the file
     os.remove(file_path)
 
-def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
+def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     
     df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
@@ -84,28 +85,28 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     target_month = [1,6]
     month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
+    if ENplot:
+        for month in target_month:
+            plt.figure(figsize=(14, 6))
+            # Plotting 'load' and 'pv_serve_load' columns against the timestamp index
+            plt.plot(df_load.index, df_load['load'], label='Load')
+            plt.plot(df_load.index, df_load['pv_produce'], label='PV Produce')
 
-    for month in target_month:
-        plt.figure(figsize=(14, 6))
-        # Plotting 'load' and 'pv_serve_load' columns against the timestamp index
-        plt.plot(df_load.index, df_load['load'], label='Load')
-        plt.plot(df_load.index, df_load['pv_produce'], label='PV Produce')
+            # Adding labels and title
+            plt.xlabel('Timestamp')
+            plt.ylabel('Load')
+            plt.title(f"Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}")
 
-        # Adding labels and title
-        plt.xlabel('Timestamp')
-        plt.ylabel('Load')
-        plt.title(f"Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}")
+            # Adding legend
+            plt.legend()
 
-        # Adding legend
-        plt.legend()
+            
+            # Set x-axis limits to the current target month
+            plt.xlim((df_load.index[0].replace(month=month), df_load.index[0].replace(month=month + 1)))
 
-        
-        # Set x-axis limits to the current target month
-        plt.xlim((df_load.index[0].replace(month=month), df_load.index[0].replace(month=month + 1)))
-
-        plt.savefig(f"result_{year_of_first_row}/Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}.png", format="png")
-        # Display the plot
-        plt.show()
+            plt.savefig(f"result_{year_of_first_row}/Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}.png", format="png")
+            # Display the plot
+            plt.show()
         
     
 
@@ -116,7 +117,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
     print(f"Capacity Factor: {capacity_factor:,.2f} %")
     sum_pv_curtailed = df_load['pv_curtailed'].sum()
-    print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({(sum_pv_curtailed/sum_pv_produce*100):.2f} %)")
+    sum_pv_curtailed_percent = (sum_pv_curtailed/sum_pv_produce*100)
+    print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
 
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
@@ -149,29 +151,30 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
     # Create a list of hours (0 to 23) for the x-axis
     hours = list(range(24))
 
-    # Plot the hourly data for weekdays and weekends
-    plt.figure(figsize=(12, 6))
-    plt.plot(hours, average_load_patterns, label='average_load_patterns', marker='o')
-    plt.plot(hours, average_pv_patterns, label='average_pv_patterns', marker='o')
-    # Highlight the area where average_pv_patterns > average_load_patterns
-    # Highlight the area where average_pv_patterns > average_load_patterns
-    plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
-                 where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
-                 color='darkviolet', alpha=0.5)
-
-    # Add a hatched pattern using an additional fill_between
-    plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
+    if ENplot:
+        # Plot the hourly data for weekdays and weekends
+        plt.figure(figsize=(12, 6))
+        plt.plot(hours, average_load_patterns, label='average_load_patterns', marker='o')
+        plt.plot(hours, average_pv_patterns, label='average_pv_patterns', marker='o')
+        # Highlight the area where average_pv_patterns > average_load_patterns
+        # Highlight the area where average_pv_patterns > average_load_patterns
+        plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
                     where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
-                    color='none', hatch='///', edgecolor='purple')
+                    color='darkviolet', alpha=0.5)
 
-    plt.title('Hourly Electrical Load  & PV Profile')
-    plt.xlabel('Hour of the Day')
-    plt.ylabel('Average Load & PV (kW)')
-    plt.legend()
-    plt.grid(True)
-    plt.xticks(hours)
-    plt.savefig(f"result_{year_of_first_row}/load_pv.png", format="png")
-    plt.show()
+        # Add a hatched pattern using an additional fill_between
+        plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
+                        where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
+                        color='none', hatch='///', edgecolor='purple')
+
+        plt.title('Hourly Electrical Load  & PV Profile')
+        plt.xlabel('Hour of the Day')
+        plt.ylabel('Average Load & PV (kW)')
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(hours)
+        plt.savefig(f"result_{year_of_first_row}/load_pv.png", format="png")
+        plt.show()
         
         
 
@@ -254,29 +257,29 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     
 
+    if ENplot:
+        # Create a plot
+        plt.figure(figsize=(10, 6))
+
+        # Plotting the data
+        plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
+
+        # Adding a horizontal line for the 40th percentile
+        plt.axhline(y=percentile_80_pv_curtailed_kWh, color='lime', linestyle='--', label=f'80th Percentile ({percentile_80_pv_curtailed_kWh})')
+        plt.axhline(y=percentile_60_pv_curtailed_kWh, color='g', linestyle='-', label=f'60th Percentile ({percentile_60_pv_curtailed_kWh})')
+        plt.axhline(y=percentile_40_pv_curtailed_kWh, color='lightgreen', linestyle='--', label=f'40th Percentile ({percentile_40_pv_curtailed_kWh})')
     
-    # Create a plot
-    plt.figure(figsize=(10, 6))
+        # Adding title and labels
+        plt.title(f'PV Curtailed with 60th Percentile Line ({pv_install_capacity:,.0f} kWp)')
+        plt.xlabel('Index')
+        plt.ylabel('Values')
 
-    # Plotting the data
-    plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
+        # Adding a legend
+        plt.legend()
 
-    # Adding a horizontal line for the 40th percentile
-    plt.axhline(y=percentile_80_pv_curtailed_kWh, color='lime', linestyle='--', label=f'80th Percentile ({percentile_80_pv_curtailed_kWh})')
-    plt.axhline(y=percentile_60_pv_curtailed_kWh, color='g', linestyle='-', label=f'60th Percentile ({percentile_60_pv_curtailed_kWh})')
-    plt.axhline(y=percentile_40_pv_curtailed_kWh, color='lightgreen', linestyle='--', label=f'40th Percentile ({percentile_40_pv_curtailed_kWh})')
- 
-    # Adding title and labels
-    plt.title(f'PV Curtailed with 60th Percentile Line ({pv_install_capacity:,.0f} kWp)')
-    plt.xlabel('Index')
-    plt.ylabel('Values')
-
-    # Adding a legend
-    plt.legend()
-
-    plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
-    # Show the plot
-    plt.show()
+        plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
+        # Show the plot
+        plt.show()
     
 
 
@@ -443,18 +446,45 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity):
 
     df.to_csv('load_pv_profile.csv')
 
+    return sum_pv_curtailed_percent,total_price
+
 
 
 for install_cap in PV_Install_Capacity:
+    import sys
+    original_stdout = sys.stdout
     # Open a text file in write mode
     with open(f'result_{year_of_first_row}/load_pv_batt_result_{install_cap}.txt', 'w') as f:
         # Redirect the standard output to the text file
-        import sys
         sys.stdout = f
         
         print(f"\n\rPV Install_cap: {install_cap:.2f} kW")
-        cal_pv_serve_load(df_pv,df_load,install_cap)
-        
+        cal_pv_serve_load(df_pv,df_load,install_cap,ENplot=False)
+    
+    sys.stdout = original_stdout       
 
     # After exiting the 'with' block, the standard output will be reverted back to the console
 
+def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, max_iterations=100):
+    low = 0  # Minimum possible pv_install_capacity
+    high = 1000  # Set a reasonable high boundary based on your data context
+    iterations = 0
+
+    while iterations < max_iterations:
+        mid = (low + high) / 2
+        sum_pv_curtailed_percent, _ = cal_pv_serve_load(df_pv, df_load, mid)
+
+        if abs(sum_pv_curtailed_percent - target_percent) <= tolerance:
+            return mid
+
+        if sum_pv_curtailed_percent < target_percent:
+            low = mid
+        else:
+            high = mid
+
+        iterations += 1
+
+    return mid  # Return the best found value if max_iterations is reached
+
+optimal_capacity = find_optimal_pv_capacity(df_pv, df_load)
+print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")
