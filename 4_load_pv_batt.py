@@ -130,11 +130,11 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
         "energy_of_pv_serve_load": sum_pv_serve_load
     }
     
-
-    # Append the data to the JSON file
-    with open(file_path, "a") as json_file:
-        json.dump(param_econ, json_file)
-        json_file.write("\n")
+    if ENplot:
+        # Append the data to the JSON file
+        with open(file_path, "a") as json_file:
+            json.dump(param_econ, json_file)
+            json_file.write("\n")
     
 
 
@@ -459,7 +459,7 @@ for install_cap in PV_Install_Capacity:
         sys.stdout = f
         
         print(f"\n\rPV Install_cap: {install_cap:.2f} kW")
-        cal_pv_serve_load(df_pv,df_load,install_cap,ENplot=False)
+        cal_pv_serve_load(df_pv,df_load,install_cap,ENplot=True)
     
     sys.stdout = original_stdout       
 
