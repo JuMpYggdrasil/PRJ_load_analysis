@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import math
 
 # Loop through each day in the year (yyyy-mm-dd)
-start_date = pd.Timestamp('2022-02-15')
+start_date = pd.Timestamp('2022-01-15')
 end_date = pd.Timestamp('2022-12-31')
 
 # Dates to be excluded
 excluded_dates = [
-    pd.Timestamp('2022-02-18'),
-    pd.Timestamp('2022-02-19'),
+    # pd.Timestamp('2022-02-18'),
+    # pd.Timestamp('2022-02-19'),
 ]
 
 # Function to calculate demand pattern for a specific day
