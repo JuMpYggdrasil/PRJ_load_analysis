@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-on_peak_demand = 2780*12 # kWh, units per year
-off_peak_demand = 2030*12 # kWh, units per year
-holiday_demand = 1980*12 # kWh, units per year
+on_peak_demand = 5187200*12 # kWh, units per year
+off_peak_demand = 4592000*12 # kWh, units per year
+holiday_demand = 5246400*12 # kWh, units per year
 
 # Create a DatetimeIndex for the year 2023 with hourly frequency
 hourly_index = pd.date_range(start='2023-01-01', end='2023-12-31 23:59:00', freq='15T')
@@ -41,6 +41,9 @@ on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
 holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
 
+# on_peak_hours_count = len(on_peak_data)*15/60
+# off_peak_hours_count = len(off_peak_data)*15/60
+# holiday_hours_count = len(holiday_data)*15/60
 on_peak_hours_count = len(on_peak_data)*15/60
 off_peak_hours_count = len(off_peak_data)*15/60
 holiday_hours_count = len(holiday_data)*15/60

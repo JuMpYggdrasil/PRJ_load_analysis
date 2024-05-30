@@ -6,7 +6,7 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [200,280] # kW
+PV_Install_Capacity = [1000] # kW
 PVSyst_Energy_per_year_per_kWp = 1242 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
