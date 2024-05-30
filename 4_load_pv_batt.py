@@ -6,7 +6,7 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [1000] # kW
+PV_Install_Capacity = [36718] # kW
 PVSyst_Energy_per_year_per_kWp = 1242 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
@@ -465,9 +465,9 @@ for install_cap in PV_Install_Capacity:
 
     # After exiting the 'with' block, the standard output will be reverted back to the console
 
-def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, max_iterations=100):
+def find_optimal_pv_capacity(df_pv, df_load, target_percent=2, tolerance=0.1, max_iterations=100):
     low = 0  # Minimum possible pv_install_capacity
-    high = 1000  # Set a reasonable high boundary based on your data context
+    high = 100000  # Set a reasonable high boundary based on your data context
     iterations = 0
 
     while iterations < max_iterations:
