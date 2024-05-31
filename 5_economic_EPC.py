@@ -29,8 +29,9 @@ o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
 ## EGAT_operation_cost
-# from excel 5 day approx 105201+(27*km)
-general_work_cost = 105201
+# from excel 2 person 5 day approx 103621+(27*km)
+# from excel 2 person 7 day approx 140426+(27*km)
+general_work_cost = 103621
 distance_from_EGAT_km = 200
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 
