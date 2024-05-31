@@ -19,7 +19,7 @@ tariff_rate = 4.88 # THB/units     <==    ##### edit #####
 # Inputs config
 project_time_years = 25 # years
 cost_per_kw = 29000     # THB/kW  <==    ##### from contractor #####
-margin = 20.6896551724138 # %
+margin = 20.6896551724138 # % approx 10%
 sale_price_per_kw =  cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %
 solar_degradation_after_first_year = 0.55  # %
