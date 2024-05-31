@@ -1,29 +1,29 @@
 
 Energy consumption -- Load (kWh)
-1 January 15,324,426 kWh
-2 February 13,822,410 kWh
-3 March 15,178,537 kWh
-4 April 15,024,410 kWh
-5 May 15,179,953 kWh
-6 June 14,725,550 kWh
-7 July 15,473,148 kWh
-8 August 15,179,953 kWh
-9 September 14,872,856 kWh
-10 October 15,327,259 kWh
-11 November 14,725,550 kWh
-12 December 15,473,148 kWh
+1 January 231,015 kWh
+2 February 248,445 kWh
+3 March 290,898 kWh
+4 April 313,944 kWh
+5 May 347,817 kWh
+6 June 385,827 kWh
+7 July 415,941 kWh
+8 August 381,114 kWh
+9 September 365,781 kWh
+10 October 293,262 kWh
+11 November 311,382 kWh
+12 December 279,615 kWh
 
 
-Energy of On Peak Data: 62,246,400.00 kWh
-Energy of Off Peak Data: 54,930,413.72 kWh
-Energy of holiday Data: 63,130,386.28 kWh
-Total Energy: 180,307,200.00 kWh
-Sum of all Data: 180,307,200.00 kWh
-Sum of demand_charge: 299,437.81 kW
+Energy of On Peak Data: 2,104,485.00 kWh
+Energy of Off Peak Data: 929,034.00 kWh
+Energy of holiday Data: 831,522.00 kWh
+Total Energy: 3,865,041.00 kWh
+Sum of all Data: 3,865,041.00 kWh
+Sum of demand_charge: 15,426.00 kW
 
-price_on_peak: 260,432,712.96 THB
-price_off_peak: 307,394,904.96 THB
-price_demand_charge: 39,804,268.37 THB
-Total Base Price: 607,635,633.17 THB
+price_on_peak: 8,804,954.79 THB
+price_off_peak: 4,583,959.66 THB
+price_demand_charge: 2,050,578.18 THB
+Total Base Price: 15,443,239.51 THB
 	ignore FT & vat
 

@@ -48,7 +48,6 @@ sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
 plt.title('Correlation Matrix')
 plt.show()
 
-# Visualize the time series data
 plt.figure(figsize=(12, 6))
 plt.plot(data.index, data['load'], label='Load Data')
 plt.xlabel('Timestamp')
@@ -56,8 +55,11 @@ plt.ylabel('Load')
 plt.title('Electrical Load Time Series')
 plt.legend()
 plt.grid(True)
+
+# Save the plot as a PNG file
+plt.savefig(f"result_{year_of_first_row}/anual_load.png", format="png")
+
 plt.show()
-# plt.clf()
 
 
 

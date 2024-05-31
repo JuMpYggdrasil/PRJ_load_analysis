@@ -6,8 +6,8 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [36718] # kW
-PVSyst_Energy_per_year_per_kWp = 1242 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+PV_Install_Capacity = [600,700] # kW
+PVSyst_Energy_per_year_per_kWp = 1352 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 unit_price_on_peak = 4.1839
 unit_price_off_peak = 2.6037
@@ -23,6 +23,7 @@ PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)
 
+
 first_row_timestamp = df_load.index[0]
 year_of_first_row = first_row_timestamp.year
 # Create the folder if it doesn't exist
@@ -30,6 +31,8 @@ folder_name = f"result_{year_of_first_row}"
 if not os.path.exists(folder_name):
     os.makedirs(folder_name)
     print(f"Folder '{folder_name}' created.")
+
+
 
 df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 df_pv.set_index('timestamp', inplace=True)
@@ -465,9 +468,9 @@ for install_cap in PV_Install_Capacity:
 
     # After exiting the 'with' block, the standard output will be reverted back to the console
 
-def find_optimal_pv_capacity(df_pv, df_load, target_percent=2, tolerance=0.1, max_iterations=100):
+def find_optimal_pv_capacity(df_pv, df_load, target_percent=5, tolerance=0.1, max_iterations=100):
     low = 0  # Minimum possible pv_install_capacity
-    high = 100000  # Set a reasonable high boundary based on your data context
+    high = 10000  # Set a reasonable high boundary based on your data context
     iterations = 0
 
     while iterations < max_iterations:
@@ -486,5 +489,5 @@ def find_optimal_pv_capacity(df_pv, df_load, target_percent=2, tolerance=0.1, ma
 
     return mid  # Return the best found value if max_iterations is reached
 
-optimal_capacity = find_optimal_pv_capacity(df_pv, df_load)
-print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")
+# optimal_capacity = find_optimal_pv_capacity(df_pv, df_load)
+# print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")

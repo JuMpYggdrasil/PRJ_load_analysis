@@ -6,6 +6,7 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import json
 import math
+import os
 
 # Inputs
 # installed_capacity_set = 10  # kW
@@ -35,6 +36,18 @@ general_work_cost = 103621
 distance_from_EGAT_km = 200
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 
+
+df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
+df_load.set_index('timestamp', inplace=True)
+
+
+first_row_timestamp = df_load.index[0]
+year_of_first_row = first_row_timestamp.year
+# Create the folder if it doesn't exist
+folder_name = f"result_{year_of_first_row}/EPC"
+if not os.path.exists(folder_name):
+    os.makedirs(folder_name)
+    print(f"Folder '{folder_name}' created.")
 
 def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=False):
     # Initialize lists to store data
@@ -164,6 +177,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.legend()
         plt.grid(True)
+        plt.savefig(f"result_{year_of_first_row}/EPC/anual_revenue_{installed_capacity}kW.png", format="png")
         plt.show()
 
         # Plotting
@@ -179,7 +193,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
 
         # Add payback period annotation
         plt.annotate("Payback Period {:,.0f} years {:,.0f} months".format(pbp_yr,pbp_mo), xy=(payback_period-1, 0), xytext=(payback_period + 3, -cumulative_cash_flow[payback_period+1]), arrowprops=dict(facecolor='red', arrowstyle='->'))
-
+        
+        plt.savefig(f"result_{year_of_first_row}/EPC/cumulative_cashflow_{installed_capacity}kW.png", format="png")
         plt.show()
 
     print("Installed Capacity: {:,.2f} kWp".format(installed_capacity))
@@ -228,6 +243,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         plt.title('Economic Indicators for Solar PV Project', fontsize=16, pad=20, loc='center')  # Set pad to adjust the distance between the title and the table
         table.scale(1, 1.8)  # Adjust the scale of the table
         plt.tight_layout(rect=[0, 0.1, 1, 0.9])  # Adjust the layout to make room for the title
+        plt.savefig(f"result_{year_of_first_row}/EPC/economic_indicators_{installed_capacity}kW.png", format="png")
         plt.show()
 
     # for debug
