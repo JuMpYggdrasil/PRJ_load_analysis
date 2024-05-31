@@ -28,6 +28,11 @@ o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
+## EGAT_operation_cost
+# from excel 5 day approx 105201+(27*km)
+general_work_cost = 105201
+distance_from_EGAT_km = 200
+EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 
 
 def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=False):
@@ -41,7 +46,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     inverter_replacement = 0
 
     # Calculate Initial Investment
-    initial_investment = installed_capacity * sale_price_per_kw
+    initial_investment = installed_capacity * sale_price_per_kw + EGAT_operation_cost
     
     ## Calculate Annual Electricity Generation
     annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
