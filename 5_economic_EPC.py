@@ -9,32 +9,39 @@ import math
 import os
 
 # Inputs
+#### param_for_economic.json
 # installed_capacity_set = 10  # kW
 # capacity_factor_set = 14.5   # %
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
 tariff_rate = 4.88 # THB/units     <==    ##### edit #####
+# >=69kV -> 4.19, 22,33kV -> 4.25,<22kV -> 4.36
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 29000     # THB/kW  <==    ##### from contractor #####
-margin = 20.6896551724138 # % approx 10%
+cost_per_kw = 31000     # THB/kW  <==    ##### from contractor #####
+margin = 12 # % approx 10%
 sale_price_per_kw =  cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
-o_and_m_start_at_year = 1 #
+o_and_m_start_at_year = 3 #
 
 ## EGAT_operation_cost
-# from excel 2 person 5 day approx 103621+(27*km)
-# from excel 2 person 7 day approx 140426+(27*km)
-general_work_cost = 103621
-distance_from_EGAT_km = 200
+# from excel 2 person 3 day approx  49,000 +(27*km) -- minimum
+# from excel 2 person 5 day approx  71,000 +(27*km) 
+# from excel 2 person 7 day approx  94,000 +(27*km)
+# from excel 3 person 5 day approx  87,000 +(27*km)
+# from excel 3 person 7 day approx 117,000 +(27*km) -- default
+# from excel 7 person 7 day approx 213,000 +(27*km)
+general_work_cost = 117000
+distance_from_EGAT_km = 160
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
+print("EGAT_operation_cost= ",EGAT_operation_cost)
 
 
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
@@ -63,9 +70,9 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     initial_investment = installed_capacity * sale_price_per_kw + EGAT_operation_cost
     
     ## Calculate Annual Electricity Generation
-    annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    # annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    annual_generation = energy_of_pv_serve_load # focus PV meet load
     print("energy per year",annual_generation/1000,"MWh")
-    # annual_generation = energy_of_pv_serve_load # focus PV meet load
 
     # Calculate payback period
     def calculate_payback_period(cash_flow_list):
@@ -240,7 +247,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
 
         table = plt.table(cellText=df.values,rowColours=row_colors, colLabels=df.columns, rowLabels=df.index, loc='center', cellLoc='right', colColours=colors, colWidths=[0.2, 0.2, 0.15])
         plt.axis('off')  # Hide the axis
-        plt.title('Economic Indicators for Solar PV Project', fontsize=16, pad=20, loc='center')  # Set pad to adjust the distance between the title and the table
+        plt.title(f'Economic Indicators for Solar PV Project ({installed_capacity:,.0f} kWp)', fontsize=16, pad=20, loc='center')  # Set pad to adjust the distance between the title and the table
         table.scale(1, 1.8)  # Adjust the scale of the table
         plt.tight_layout(rect=[0, 0.1, 1, 0.9])  # Adjust the layout to make room for the title
         plt.savefig(f"result_{year_of_first_row}/EPC/economic_indicators_{installed_capacity}kW.png", format="png")

@@ -6,15 +6,24 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [600,700] # kW
-PVSyst_Energy_per_year_per_kWp = 1352 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+PV_Install_Capacity = [34000] # kW
+PVSyst_Energy_per_year_per_kWp = 1325 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 
 PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh/year/kWp)/1402.8 change this factory to match PvSyst Energy per year
@@ -468,9 +477,9 @@ for install_cap in PV_Install_Capacity:
 
     # After exiting the 'with' block, the standard output will be reverted back to the console
 
-def find_optimal_pv_capacity(df_pv, df_load, target_percent=5, tolerance=0.1, max_iterations=100):
+def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, max_iterations=100):
     low = 0  # Minimum possible pv_install_capacity
-    high = 10000  # Set a reasonable high boundary based on your data context
+    high = 100000  # Set a reasonable high boundary based on your data context
     iterations = 0
 
     while iterations < max_iterations:
@@ -489,5 +498,5 @@ def find_optimal_pv_capacity(df_pv, df_load, target_percent=5, tolerance=0.1, ma
 
     return mid  # Return the best found value if max_iterations is reached
 
-# optimal_capacity = find_optimal_pv_capacity(df_pv, df_load)
-# print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")
+optimal_capacity = find_optimal_pv_capacity(df_pv, df_load, target_percent=2)
+print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")
