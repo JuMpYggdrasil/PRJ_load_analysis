@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-on_peak_demand = 5187200*12 # kWh, units per year
-off_peak_demand = 4592000*12 # kWh, units per year
-holiday_demand = 5246400*12 # kWh, units per year
+on_peak_demand = 338000 # kWh, units per year
+off_peak_demand = 284800 # kWh, units per year
+holiday_demand = 253200 # kWh, units per year
 
 # Create a DatetimeIndex for the year 2023 with hourly frequency
 hourly_index = pd.date_range(start='2023-01-01', end='2023-12-31 23:59:00', freq='15T')
@@ -83,6 +83,7 @@ plt.plot(df.index, df['Load'], color='blue', linewidth=1)
 plt.title('Electricity Load for the Year 2023')
 plt.xlabel('Date')
 plt.ylabel('Load (kWh)')
+plt.ylim(bottom=0)  # Ensure y-axis starts at 0
 plt.grid(True)
 plt.show()
 

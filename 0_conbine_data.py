@@ -10,19 +10,19 @@ from tkinter import filedialog
 
 output_file_name = r'combined_data.csv'
 
-## PEA AMR format setting
-skiprows_count = 5
-peak_string = "RATE A"
-off_peak_string = "RATE B"
-holiday_string = "RATE C"
-header_column_index = [0, 1, 3, 5]
-
-# ## RAJBURI_COGEN AMR format setting
-# skiprows_count = 7
+# ## PEA AMR format setting
+# skiprows_count = 5
 # peak_string = "RATE A"
 # off_peak_string = "RATE B"
 # holiday_string = "RATE C"
 # header_column_index = [0, 1, 3, 5]
+
+## RAJBURI_COGEN AMR format setting
+skiprows_count = 7
+peak_string = "RATE A"
+off_peak_string = "RATE B"
+holiday_string = "RATE C"
+header_column_index = [0, 1, 3, 5]
 
 
 # ## egat dimond AMR format setting
@@ -32,7 +32,8 @@ header_column_index = [0, 1, 3, 5]
 # holiday_string = "Offpeak-Holiday (kW)"
 # header_column_index = [0, 1, 2, 3]
 
-timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
+# timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
+timestamp_format_AMR = '%d/%m/%Y %H:%M' # RAJBURI_COGEN
 # timestamp_format_AMR = '%d %b %Y %H:%M' # EGAT_DIAMOND
 
 timestamp_format_standard = '%d/%m/%Y %H.%M'
