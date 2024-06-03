@@ -32,13 +32,13 @@ o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 3 #
 
 ## EGAT_operation_cost
-# from excel 2 person 3 day approx  49,000 +(27*km) -- minimum
-# from excel 2 person 5 day approx  71,000 +(27*km) 
-# from excel 2 person 7 day approx  94,000 +(27*km)
-# from excel 3 person 5 day approx  87,000 +(27*km)
-# from excel 3 person 7 day approx 117,000 +(27*km) -- default
-# from excel 7 person 7 day approx 213,000 +(27*km)
-general_work_cost = 117000
+# from excel 2 person 3 day approx  59,000 +(27*km) -- minimum
+# from excel 2 person 5 day approx  81,000 +(27*km) 
+# from excel 2 person 7 day approx 104,000 +(27*km)
+# from excel 3 person 5 day approx  97,000 +(27*km)
+# from excel 3 person 7 day approx 127,000 +(27*km) -- default
+# from excel 7 person 7 day approx 223,000 +(27*km)
+general_work_cost = 127000
 distance_from_EGAT_km = 160
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 print("EGAT_operation_cost= ",EGAT_operation_cost)
