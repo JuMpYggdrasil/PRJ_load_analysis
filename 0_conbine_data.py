@@ -11,18 +11,25 @@ from tkinter import filedialog
 output_file_name = r'combined_data.csv'
 
 # ## PEA AMR format setting
-# skiprows_count = 5
+# skiprows_count = 5 #DEFAULT 5
 # peak_string = "RATE A"
 # off_peak_string = "RATE B"
 # holiday_string = "RATE C"
 # header_column_index = [0, 1, 3, 5]
 
-## RAJBURI_COGEN AMR format setting
-skiprows_count = 7
+### PEA kWh AMR format setting (don't forget to scale load x4)
+skiprows_count = 8 #DEFAULT 8
 peak_string = "RATE A"
 off_peak_string = "RATE B"
 holiday_string = "RATE C"
-header_column_index = [0, 1, 3, 5]
+header_column_index = [0, 1, 2, 3]
+
+# ## RAJBURI_COGEN AMR format setting
+# skiprows_count = 7
+# peak_string = "RATE A"
+# off_peak_string = "RATE B"
+# holiday_string = "RATE C"
+# header_column_index = [0, 1, 3, 5]
 
 
 # ## egat dimond AMR format setting
@@ -136,6 +143,8 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
             df = df.iloc[:, header_column_index]
             df = df.fillna(0)
             df["ผลรวม"] = df[peak_string]+df[off_peak_string]+df[holiday_string]
+            # incase excel file is energy kWh -> need to scale x4
+            # df["ผลรวม"] = df["ผลรวม"]*4
 
             
             all_dataframes.append(df)

@@ -6,7 +6,7 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [34000] # kW
+PV_Install_Capacity = [15000] # kW
 PVSyst_Energy_per_year_per_kWp = 1325 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 ## >69 kV
@@ -93,9 +93,9 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
     df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
 
-    # target_month = [1,2,3,4,5,6,7,8,9,10,11,12]
-    target_month = [1,6]
-    month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    target_month = [1,2,3,4,5,6,7,8,9,10,11,12]
+    target_month_show = [1,7]
+    month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'None']
 
     if ENplot:
         for month in target_month:
@@ -113,12 +113,20 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
             plt.legend()
 
             
-            # Set x-axis limits to the current target month
-            plt.xlim((df_load.index[0].replace(month=month), df_load.index[0].replace(month=month + 1)))
+            ## Set x-axis limits to the current target month
+            # Get the first date in the DataFrame's index
+            start_date = df_load.index[0]
+            start_of_target_month = start_date.replace(month=month, day=1)
+            start_of_next_month = (start_of_target_month + pd.DateOffset(months=1)).replace(day=1)
+            # Set the x-axis limits to span from the start of the target month to the start of the next month
+            plt.xlim((start_of_target_month, start_of_next_month))
 
-            plt.savefig(f"result_{year_of_first_row}/Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}.png", format="png")
-            # Display the plot
-            plt.show()
+            plt.savefig(f"result_{year_of_first_row}/Load_and_PV({pv_install_capacity:,.0f}_kWp)_{month}_{month_name[month]}.png", format="png")
+            if month in target_month_show:
+                # Display the plot
+                plt.show()
+            else:
+                plt.close()  # Close the plot to free up memory
         
     
 
@@ -481,13 +489,14 @@ def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, m
     low = 0  # Minimum possible pv_install_capacity
     high = 100000  # Set a reasonable high boundary based on your data context
     iterations = 0
+    sum_pv_curtailed_percent_txt = ""
 
     while iterations < max_iterations:
         mid = (low + high) / 2
         sum_pv_curtailed_percent, _ = cal_pv_serve_load(df_pv, df_load, mid)
 
         if abs(sum_pv_curtailed_percent - target_percent) <= tolerance:
-            return mid
+            return mid,sum_pv_curtailed_percent_txt
 
         if sum_pv_curtailed_percent < target_percent:
             low = mid
@@ -495,8 +504,9 @@ def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, m
             high = mid
 
         iterations += 1
+        sum_pv_curtailed_percent_txt=f" PV curtailed {sum_pv_curtailed_percent:,.2f}"
 
-    return mid  # Return the best found value if max_iterations is reached
+    return mid,sum_pv_curtailed_percent_txt  # Return the best found value if max_iterations is reached
 
-optimal_capacity = find_optimal_pv_capacity(df_pv, df_load, target_percent=2)
-print(f"The optimal PV installation capacity is {optimal_capacity:,.2f}")
+optimal_capacity,curtailed_percent_txt = find_optimal_pv_capacity(df_pv, df_load, target_percent=2)
+print(f"The optimal PV installation capacity is {optimal_capacity:,.2f} kW, {curtailed_percent_txt}%")
