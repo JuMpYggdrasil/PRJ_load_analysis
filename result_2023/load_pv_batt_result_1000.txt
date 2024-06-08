@@ -1,0 +1,53 @@
+
+PV Install_cap: 1000.00 kW
+Energy of pv_produce: 1,402,811.90 kWh/year (Verify with PVSyst)
+Energy of pv_produce: 1,402.81 kWh/kWp/year
+Energy of pv_produce: 3.84 kWh/kWp/day
+Capacity Factor: 16.01 %
+Energy of pv_curtailed: 203.04 kWh  (0.01 %)
+Energy of pv_serve_load: 1,402,608.86 kWh
+  pv_serve_load -- On Peak: 899,282.75 kWh
+  pv_serve_load -- Off Peak: 97,586.05 kWh
+  pv_serve_load -- holiday: 405,740.06 kWh
+Total Base Price: 5,595,318.11 THB
+	ignore FT & vat
+
+PV < load @9.00: 365 days
+PV > load (in that day): 0 days
+Cycle/year 365 cycles
+5000 Cycle = 13.7 year
+max battery from PV curtailed: 203.04 kWh
+  -- suggest Battery Capacity: 203 kWh
+
+  -- installed Battery       : 900 kWh
+  -- suggest Battery Saving  : 427,530 THB  (4,750 THB/kWh/10years)
+                             : 183 kWh (Curtail 0.01 % -> 0.00 %)
+
+  -- installed Battery       : 500 kWh
+  -- suggest Battery Saving  : 237,926 THB  (4,759 THB/kWh/10years)
+                             : 183 kWh (Curtail 0.01 % -> 0.00 %)
+
+  -- installed Battery       : 400 kWh
+  -- suggest Battery Saving  : 190,491 THB  (4,762 THB/kWh/10years)
+                             : 183 kWh (Curtail 0.01 % -> 0.00 %)
+
+  -- installed Battery       : 300 kWh
+  -- suggest Battery Saving  : 143,055 THB  (4,769 THB/kWh/10years)
+                             : 183 kWh (Curtail 0.01 % -> 0.00 %)
+
+  -- installed Battery       : 250 kWh
+  -- suggest Battery Saving  : 119,255 THB  (4,770 THB/kWh/10years)
+                             : 162 kWh (Curtail 0.01 % -> 0.00 %)
+
+  -- installed Battery       : 200 kWh
+  -- suggest Battery Saving  : 95,404 THB  (4,770 THB/kWh/10years)
+                             : 130 kWh (Curtail 0.01 % -> 0.01 %)
+
+  -- installed Battery       : 150 kWh
+  -- suggest Battery Saving  : 71,553 THB  (4,770 THB/kWh/10years)
+                             : 97 kWh (Curtail 0.01 % -> 0.01 %)
+
+  -- installed Battery       : 100 kWh
+  -- suggest Battery Saving  : 47,702 THB  (4,770 THB/kWh/10years)
+                             : 65 kWh (Curtail 0.01 % -> 0.01 %)
+

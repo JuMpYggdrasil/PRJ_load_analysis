@@ -6,8 +6,9 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [15000] # kW
+PV_Install_Capacity = [1000] # kW
 PVSyst_Energy_per_year_per_kWp = 1325 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+
 
 ## >69 kV
 unit_price_on_peak = 4.1025
@@ -26,7 +27,9 @@ unit_price_service_charge = 312.24
 # # *** ignore FT 5-10% and vat 7%
 
 
-PV_Energy_Adjust_Factor = PVSyst_Energy_per_year_per_kWp/1402.8119 # (PVSyst kWh/year/kWp)/1402.8 change this factory to match PvSyst Energy per year
+# PV_Energy_Adjust_Factor_1_6 = PVSyst_Energy_per_year_per_kWp/737.41945*737.41945
+# PV_Energy_Adjust_Factor_7_12 = PVSyst_Energy_per_year_per_kWp/665.39245*665.39245
+PV_Energy_Adjust_Factor = (PVSyst_Energy_per_year_per_kWp)/1402.8119 # (PVSyst kWh/year/kWp)/1402.8119 change this factory to match PvSyst Energy per year
 
 
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
@@ -87,6 +90,12 @@ if os.path.exists(file_path):
     os.remove(file_path)
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
+    # first_six_month_mask = (df_pv.index.month >= 1) & (df_pv.index.month <= 6)
+    # last_six_month_mask = (df_pv.index.month >= 7) & (df_pv.index.month <= 12)
+    # first_six_month_data = df_pv["pv"][first_six_month_mask] * pv_install_capacity * PV_Energy_Adjust_Factor_1_6
+    # last_six_month_data = df_pv["pv"][last_six_month_mask] * pv_install_capacity * PV_Energy_Adjust_Factor_7_12
+    
+    # df_load["pv_produce"] = pd.concat([first_six_month_data, last_six_month_data])
     
     df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
@@ -157,7 +166,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
             json_file.write("\n")
     
 
-
+    
+    
     df = df_load
     
     # Calculate hourly averages for each hour of the day for all 7 days of the week
