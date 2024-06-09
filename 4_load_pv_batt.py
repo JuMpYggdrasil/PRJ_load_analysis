@@ -7,8 +7,8 @@ from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
 PV_Install_Capacity = [15000] # kW
-PVSyst_Energy_per_year_per_kWp = 1325 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
-
+PVSyst_Energy_per_year_per_kWp = 1323 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
+PVSyst_GHI = 1730.2 # (PVSyst kWh/m2/year)
 
 ## >69 kV
 unit_price_on_peak = 4.1025
@@ -158,12 +158,15 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity):,.2f} kWh/kWp/year")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
     print(f"Capacity Factor: {capacity_factor:,.2f} %")
+    
+
     sum_pv_curtailed = df_load['pv_curtailed'].sum()
     sum_pv_curtailed_percent = (sum_pv_curtailed/sum_pv_produce*100)
     print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
-    
+    print(f"PR: {(sum_pv_serve_load/PVSyst_GHI/pv_install_capacity):,.2f}")
+
     param_econ = {
         "installed_capacity": pv_install_capacity,
         "capacity_factor": capacity_factor,
