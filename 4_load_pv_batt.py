@@ -48,8 +48,8 @@ if not os.path.exists(folder_name):
 
 
 
-# df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
-df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+# df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 df_pv.set_index('timestamp', inplace=True)
 
 

@@ -54,6 +54,7 @@ on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_
 off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
 holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
 
+
 # Open a text file in write mode
 with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f:
     # Redirect the standard output to the text file
@@ -100,6 +101,21 @@ with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f
     total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
     print(f"Total Base Price: {total_price:,.2f} THB")
     print("\tignore FT & vat\n\r")
+    
+    
+    # Count the number of hours in on_peak_data
+    on_peak_hours_count = on_peak_data.shape[0]
+
+    # Count the number of hours in off_peak_data
+    off_peak_hours_count = off_peak_data.shape[0]
+
+    # Count the number of hours in holiday_data
+    holiday_hours_count = holiday_data.shape[0]
+
+    print(f"On-peak days: {(on_peak_hours_count/24):,.1f}")
+    print(f"Off-peak days: {(off_peak_hours_count/24):,.1f}")
+    print(f"Holiday days: {(holiday_hours_count/24):,.1f}")
+    print(f"  365 check -> {((on_peak_hours_count+off_peak_hours_count+holiday_hours_count)/24):,.1f}")
 
     # After exiting the 'with' block, the standard output will be reverted back to the console
     

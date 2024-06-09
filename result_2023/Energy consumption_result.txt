@@ -1,5 +1,6 @@
 
-Energy consumption -- Load (kWh)
+
+Energy consumption -- Load (kWh)
 1 January 18,143,221 kWh
 2 February 16,057,414 kWh
 3 March 17,693,701 kWh
@@ -13,7 +14,8 @@
 11 November 17,313,016 kWh
 12 December 15,027,311 kWh
 
-
+
+
 Energy of On Peak Data: 72,596,216.59 kWh
 Energy of Off Peak Data: 61,543,144.09 kWh
 Energy of holiday Data: 54,164,490.40 kWh
@@ -26,4 +28,9 @@ price_off_peak: 301,267,967.92 THB
 price_demand_charge: 43,147,949.42 THB
 Total Base Price: 648,154,974.82 THB
 	ignore FT & vat
-
+
+
+On-peak days: 140.8
+Off-peak days: 118.7
+Holiday days: 105.5
+  365 check -> 365.0
