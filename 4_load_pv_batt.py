@@ -6,7 +6,7 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [1000] # kW
+PV_Install_Capacity = [15000] # kW
 PVSyst_Energy_per_year_per_kWp = 1325 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
 
 
@@ -32,6 +32,8 @@ unit_price_service_charge = 312.24
 PV_Energy_Adjust_Factor = (PVSyst_Energy_per_year_per_kWp)/1402.8119 # (PVSyst kWh/year/kWp)/1402.8119 change this factory to match PvSyst Energy per year
 
 
+kg_CO2_per_kWh = 0.452 
+
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)
 
@@ -46,7 +48,8 @@ if not os.path.exists(folder_name):
 
 
 
-df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+# df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 df_pv.set_index('timestamp', inplace=True)
 
 
@@ -67,7 +70,7 @@ df_pv_data['pv_5']=df_pv[df_pv.index.hour == 5].resample('D').mean()['pv']
 df_pv_data['pv_6']=df_pv[df_pv.index.hour == 6].resample('D').mean()['pv']
 df_pv_data['pv_7']=df_pv[df_pv.index.hour == 7].resample('D').mean()['pv']
 df_pv_data.to_csv('pv_data_for_train_model.csv')
-    
+
 
 
 # Create a list of hours (0 to 23) for the x-axis
@@ -142,13 +145,22 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     sum_pv_produce = df_load['pv_produce'].sum()
     capacity_factor = (sum_pv_produce/pv_install_capacity/8760*100)
     print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year (Verify with PVSyst)")
+    # Initialize list to store monthly average PV energy
+    pv_energy_monthly = []
+    # Calculate the average PV energy for each month
+    for mth in range(1, 13):  # Use 13 to include December
+        monthly_mean = df_load['pv_produce'][df_load.index.month == mth].mean()
+        pv_energy_monthly.append(monthly_mean)
+    # Print the monthly averages in a formatted way
+    formatted_pv_energy = ','.join([f"{value:,.0f}" for value in pv_energy_monthly])
+    print(f"  Monthly average PV energy production (kWh/month): {formatted_pv_energy}")
+    
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity):,.2f} kWh/kWp/year")
     print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
     print(f"Capacity Factor: {capacity_factor:,.2f} %")
     sum_pv_curtailed = df_load['pv_curtailed'].sum()
     sum_pv_curtailed_percent = (sum_pv_curtailed/sum_pv_produce*100)
     print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
-
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
     
@@ -235,6 +247,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
 
     sum_holiday_data = holiday_data['pv_serve_load'].sum()
     print(f"  pv_serve_load -- holiday: {sum_holiday_data:,.2f} kWh")
+    
+    print(f"  CO2 Emission Reduction: {(sum_pv_serve_load*kg_CO2_per_kWh):,.0f} kg-CO2")
     
     demand_charge_df = df['pv_serve_load'].resample('M').max()
     sum_demand_charge = demand_charge_df.sum()
