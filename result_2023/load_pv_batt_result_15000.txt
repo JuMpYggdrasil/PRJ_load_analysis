@@ -1,6 +1,5 @@
 
-
-PV Install_cap: 15000.00 kW
+PV Install_cap: 15000.00 kW
 Energy of pv_produce: 19,845,000.00 kWh/year (Verify with PVSyst)
   Monthly average PV energy production (kWh/month): 2,368,2,612,2,632,2,531,2,295,1,982,2,001,1,911,2,105,2,036,2,306,2,436
 Energy of pv_produce: 1,323.00 kWh/kWp/year
@@ -15,16 +14,14 @@ PR: 0.76
   CO2 Emission Reduction: 8,895,308 kg-CO2
 Total Base Price: 78,540,818.31 THB
 	ignore FT & vat
-
-
+
 PV < load @9.00: 361 days
 PV > load (in that day): 4 days
 Cycle/year 365 cycles
 5000 Cycle = 13.7 year
 max battery from PV curtailed: 40,907.53 kWh
   -- suggest Battery Capacity: 16,795 kWh
-
-
+
   -- installed Battery       : 900 kWh
   -- suggest Battery Saving  : 443,870 THB  (4,932 THB/kWh/10years)
                              : 5,276 kWh (Curtail 0.83 % -> 0.81 %)
