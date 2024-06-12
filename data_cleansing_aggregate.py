@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
+#pip install msvc-runtime for display on tablet window
 
 # Create a function to load and process the selected .csv file
 def load_and_process_data(file_path):
