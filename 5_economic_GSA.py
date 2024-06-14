@@ -6,6 +6,7 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import json
 import math
+import statistics
 import os
 
 # Inputs
@@ -29,7 +30,10 @@ solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
-o_and_m_start_at_year = 3 #
+o_and_m_start_at_year = 1 #
+
+tariff_discount = 15 # %
+contract_year = 15
 
 ## EGAT_operation_cost
 # from excel 2 person 3 day approx  59,000 +(27*km) -- minimum
@@ -141,7 +145,11 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
             # Calculate Annual Revenue for the year
             revenue_of_energy = 0
         else:
-            revenue_of_energy = annual_energy_year * tariff_rate
+            if year <= contract_year:
+                # revenue_of_energy = annual_energy_year * tariff_rate
+                revenue_of_energy = annual_energy_year * tariff_rate * (1-tariff_discount/100)
+            else:
+                revenue_of_energy = annual_energy_year * tariff_rate
         
         # Append Annual Revenue to list
         revenue_of_energy_list.append(revenue_of_energy)
@@ -158,7 +166,67 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         
         # Append year
         years.append(year)
-
+        
+    service_price_list = revenue_of_energy_list[1:1 + contract_year]
+    service_price = round(statistics.mean(service_price_list)+500,-3)
+    print("service_price: {:,.2f}".format(service_price))
+    service_price_to_EGAT = [service_price] * contract_year + [0] * (project_time_years-contract_year)
+    net_saving = [x - y for x, y in zip(service_price_list, service_price_to_EGAT)]
+    print(net_saving)
+    # print(service_price_to_EGAT)
+    # print(service_price_list)
+    
+    
+    # Calculate cash flows for each year
+    for year in range(0, project_time_years + 1):
+        # Calculate Solar Degradation for the year
+        if year == 0:
+            solar_degradation = 1
+        elif year == 1:
+            solar_degradation = solar_degradation_list[-1]-solar_degradation_first_year/100
+            # solar_degradation = solar_degradation_list[-1]*(1-solar_degradation_first_year/100)
+        else:
+            solar_degradation = solar_degradation_list[-1]-solar_degradation_after_first_year/100
+            # solar_degradation = solar_degradation_list[-1]*(1-solar_degradation_after_first_year/100)
+        
+        # Append Solar Degradation to list
+        solar_degradation_list.append(solar_degradation)
+        
+        # Calculate Annual Generation for the year considering degradation
+        annual_energy_year = annual_generation * solar_degradation
+        
+        # Append Annual Generation to list
+        annual_energy_year_list.append(annual_energy_year)
+        
+        # Calculate O&M Cost for the year starting from year o_and_m_start_at_year
+        if year >= o_and_m_start_at_year:
+            o_and_m_cost = initial_investment * o_and_m_percentage/100 * ((1 + o_and_m_escalation/100) ** (year - 3))
+            # Add Inverter Replacement Cost in the 10th year
+            if year == 10:
+                inverter_replacement = inverter_replacement_cost * installed_capacity
+                o_and_m_cost += inverter_replacement
+        else:
+            o_and_m_cost = 0
+        
+        # Append O&M Cost to list
+        o_and_m_cost_list.append(o_and_m_cost)
+        
+        if year == 0:
+            # Calculate Annual Revenue for the year
+            revenue_of_energy = 0
+        else:
+            if year <= contract_year:
+                # revenue_of_energy = annual_energy_year * tariff_rate
+                revenue_of_energy = annual_energy_year * tariff_rate - service_price
+            else:
+                revenue_of_energy = annual_energy_year * tariff_rate
+        
+        # Append Annual Revenue to list
+        revenue_of_energy_list.append(revenue_of_energy)
+        
+    
+    
+    
     # Calculate IRR and Payback Period
     irr = npf.irr(cash_flow_list)
     irr_percent = round(irr*100, 2)
@@ -218,6 +286,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     print("Inverter Replacement: {:,.2f} THB".format(inverter_replacement_at_first_year))
     total_25_year_saving = sum(revenue_of_energy_list)-sum(o_and_m_cost_list)
     print("Total {:,.0f}-Year Savings: {:,.2f} THB".format(project_time_years,total_25_year_saving))
+    
+    
 
     print("IRR: {:.2f}%".format(irr_percent))
     ROI = (total_25_year_saving-initial_investment)/initial_investment*100
