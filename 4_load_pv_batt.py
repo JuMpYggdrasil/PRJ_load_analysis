@@ -6,25 +6,25 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [299,550] # kW
-PVSyst_Energy_per_year_per_kWp = 1260 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/
-PVSyst_GHI = 1679.1 # (PVSyst kWh/m2/year)
+PV_Install_Capacity = [15000] # kW
+PVSyst_Energy_per_year_per_kWp = 1334 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_GHI = 1729.7 # (PVSyst kWh/m2/year)
 
-# ## >69 kV
-# unit_price_on_peak = 4.1025
-# unit_price_off_peak = 2.5849
-# # unit_price_holiday = unit_price_off_peak
-# unit_price_demand_charge = 74.14
-# unit_price_service_charge = 312.24
-# # *** ignore FT 5-10% and vat 7%
-
-## 22-33 kV
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 
 # PV_Energy_Adjust_Factor_1_6 = PVSyst_Energy_per_year_per_kWp/737.41945*737.41945
@@ -165,7 +165,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
-    print(f"PR: {(sum_pv_serve_load/PVSyst_GHI/pv_install_capacity):,.2f}")
+    print(f"PR ratio (PV): {(sum_pv_produce/PVSyst_GHI/pv_install_capacity):,.2f}")
+    print(f"PR ratio (Load): {(sum_pv_serve_load/PVSyst_GHI/pv_install_capacity):,.2f}")
 
     param_econ = {
         "installed_capacity": pv_install_capacity,

@@ -15,16 +15,16 @@ import os
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
-tariff_rate = 4.88 # THB/units     <==    ##### edit #####
-# >=69kV -> 4.19, 22,33kV -> 4.25,<22kV -> 4.36
+tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
+# >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add 0.6THB)
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 25000     # THB/kW  <==    ##### from contractor #####
-margin = 12 # % approx 10%
+cost_per_kw = 30000     # THB/kW  <==    ##### from contractor #####
+margin = 12 # % approx 10%-12%
 sale_price_per_kw =  cost_per_kw*(1+margin/100) # THB/kW
-solar_degradation_first_year = 2    # %
+solar_degradation_first_year = 2.5    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2   # %
@@ -39,7 +39,7 @@ o_and_m_start_at_year = 3 #
 # from excel 3 person 7 day approx 127,000 +(27*km) -- default
 # from excel 7 person 7 day approx 223,000 +(27*km)
 general_work_cost = 127000
-distance_from_EGAT_km = 160
+distance_from_EGAT_km = 160      # <<----- input distance from EGAT HQ (km)
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 print("EGAT_operation_cost= ",EGAT_operation_cost)
 
@@ -70,8 +70,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     initial_investment = installed_capacity * sale_price_per_kw + EGAT_operation_cost
     
     ## Calculate Annual Electricity Generation
-    # annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
-    annual_generation = energy_of_pv_serve_load # focus PV meet load
+    annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    # annual_generation = energy_of_pv_serve_load # focus PV meet load
     print("energy per year",annual_generation/1000,"MWh")
 
     # Calculate payback period
@@ -253,15 +253,32 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         plt.savefig(f"result_{year_of_first_row}/EPC/economic_indicators_{installed_capacity}kW.png", format="png")
         plt.show()
 
-    # for debug
-    # print(f"years: {years}")
-    # print(f"solar_degradation_list: {solar_degradation_list}")
-    # annual_energy_year_MW_list = [x / 1000 for x in annual_energy_year_list]
-    # print(f"annual_energy_year_list: {annual_energy_year_MW_list}")
-    # print(f"o_and_m_cost_list: {o_and_m_cost_list}")
-    # print(f"revenue_of_energy_list: {revenue_of_energy_list}")
-    # print(f"cash_flow_list: {cash_flow_list}")
-    
+        # ## for debuging
+        # print(f"years: {years}")
+        # print(f"solar_degradation_list: {solar_degradation_list}")
+        # annual_energy_year_MW_list = [x / 1000 for x in annual_energy_year_list]
+        # print(f"annual_energy_year_list: {annual_energy_year_MW_list}")
+        # print(f"o_and_m_cost_list: {o_and_m_cost_list}")
+        # print(f"revenue_of_energy_list: {revenue_of_energy_list}")
+        # print(f"cash_flow_list: {cash_flow_list}")
+        
+        # Creating DataFrame
+        df = pd.DataFrame({
+            "Years": years,
+            "Solar Degradation": solar_degradation_list,
+            "Annual Energy (MW)": [x / 1000 for x in annual_energy_year_list],
+            "O&M Cost": o_and_m_cost_list,
+            "Revenue of Energy": revenue_of_energy_list,
+            "Cash Flow": cash_flow_list
+        })
+
+        # Display DataFrame
+        print(df)
+
+        # Save DataFrame to CSV
+        csv_file_path = f"result_{year_of_first_row}/EPC/energy_data.csv"
+        df.to_csv(csv_file_path, index=False)
+        
     return irr_percent, pbp_frac
     
     

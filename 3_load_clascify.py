@@ -3,12 +3,21 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 # Load your electrical load data into a Pandas DataFrame
 df = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
@@ -61,10 +70,32 @@ with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f
     import sys
     sys.stdout = f
     
+    Average_load_factor=0
+    
     print(f"\n\rEnergy consumption -- Load (kWh)")
     for month in range(1, 13):  # Loop through months (assuming data spans a whole year)
         monthly_energy = df[df.index.month == month]['load'].sum()
-        print(f"{month} {months[month-1]} {monthly_energy:,.0f} kWh")
+        
+        # Filter data for the specific month
+        monthly_data = df[df.index.month == month]
+        # Total energy consumption for the month (in kWh)
+        monthly_energy = monthly_data['load'].sum()
+        # Number of hours in the month
+        num_hours = monthly_data.shape[0]
+        # Average load for the month
+        avg_load = monthly_energy / num_hours
+        # Peak load for the month
+        peak_load = monthly_data['load'].max()
+        # Load factor for the month
+        load_factor = (avg_load / peak_load) * 100 if peak_load != 0 else 0
+        Average_load_factor += load_factor
+        
+        # Print the results
+        print(f"{month} {months[month-1]}: {monthly_energy:,.0f} kWh, Load Factor: {load_factor:.1f}%")
+        
+
+    print("\n\r")
+    print(f"Average load factor: {(Average_load_factor/12):,.0f} %")
     print("\n\r")
         
     sum_on_peak_data = on_peak_data['load'].sum()
