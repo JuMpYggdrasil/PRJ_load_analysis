@@ -68,6 +68,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     revenue_of_energy_list = []
     o_and_m_cost_list = []
     cash_flow_list = []
+    saving_per_year_list = []
     inverter_replacement = 0
 
     # Calculate Initial Investment
@@ -213,16 +214,16 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         
         if year == 0:
             # Calculate Annual Revenue for the year
-            revenue_of_energy = 0
+            saving_per_year = 0
         else:
             if year <= contract_year:
                 # revenue_of_energy = annual_energy_year * tariff_rate
-                revenue_of_energy = annual_energy_year * tariff_rate - service_price
+                saving_per_year = annual_energy_year * tariff_rate - service_price
             else:
-                revenue_of_energy = annual_energy_year * tariff_rate
+                saving_per_year = annual_energy_year * tariff_rate
         
         # Append Annual Revenue to list
-        revenue_of_energy_list.append(revenue_of_energy)
+        saving_per_year_list.append(saving_per_year)
         
     
     
@@ -339,7 +340,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
             "Annual Energy (MW)": [x / 1000 for x in annual_energy_year_list],
             "O&M Cost": o_and_m_cost_list,
             "Revenue of Energy": revenue_of_energy_list,
-            "Cash Flow": cash_flow_list
+            "Cash Flow": cash_flow_list,
+            "saving per year list":saving_per_year_list
         })
 
         # Display DataFrame
