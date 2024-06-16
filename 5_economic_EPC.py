@@ -55,6 +55,34 @@ folder_name = f"result_{year_of_first_row}/EPC"
 if not os.path.exists(folder_name):
     os.makedirs(folder_name)
     print(f"Folder '{folder_name}' created.")
+    
+# Assumptions and values to save
+assumptions_values = f"""
+Assumption:
+Tariff Rate Average (with VAT): {tariff_rate:.5f} THB/units
+
+Inputs Configuration:
+Project Time (Years): {project_time_years} years
+Cost per kW: {cost_per_kw} THB/kW
+Margin: {margin} %
+Sale Price per kW: {sale_price_per_kw:.2f} THB/kW
+Solar Degradation First Year: {solar_degradation_first_year} %
+Solar Degradation After First Year: {solar_degradation_after_first_year} %
+Inverter Replacement Cost: {inverter_replacement_cost} THB/kW
+O&M Percentage: {o_and_m_percentage} %
+O&M Escalation Rate: {o_and_m_escalation} %
+O&M Starts at Year: {o_and_m_start_at_year}
+
+EGAT Operation Cost:
+General Work Cost: {general_work_cost} THB
+Distance from EGAT HQ: {distance_from_EGAT_km} km
+EGAT Operation Cost: {EGAT_operation_cost} THB
+"""
+# Save assumptions and values to text file
+file_path = os.path.join(folder_name, 'assumptions.txt')
+with open(file_path, 'w') as file:
+    file.write(assumptions_values)
+    
 
 def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_load,tariff_rate,ENplot=False):
     # Initialize lists to store data
