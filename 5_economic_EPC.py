@@ -23,7 +23,7 @@ tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
 project_time_years = 25 # years
 cost_per_kw = 30000     # THB/kW  <==    ##### from contractor ##### Roof 30,000, carport 42,000
 margin = 12 # % approx 10%-12%
-sale_price_per_kw =  cost_per_kw*(1+margin/100) # THB/kW
+sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
@@ -251,6 +251,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         table.scale(1, 1.8)  # Adjust the scale of the table
         plt.tight_layout(rect=[0, 0.1, 1, 0.9])  # Adjust the layout to make room for the title
         plt.savefig(f"result_{year_of_first_row}/EPC/economic_indicators_{installed_capacity}kW.png", format="png")
+        df.to_csv(f"result_{year_of_first_row}/EPC/economic_indicators_{installed_capacity}kW.csv", index=True)
         plt.show()
 
         # ## for debuging

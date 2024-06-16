@@ -27,7 +27,7 @@ Sum of demand_charge: 324,560.00 kW
 price_on_peak: 297,834,771.90 THB
 price_off_peak: 299,093,919.39 THB
 price_demand_charge: 24,062,878.40 THB
-Total Base Price: 620,995,316.57 THB
+Total Electricity Base Price: 620,995,316.57 THB
 	ignore FT & vat
 
 On-peak days: 140.8

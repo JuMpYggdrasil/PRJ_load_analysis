@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import json
 
 ## >69 kV
 unit_price_on_peak = 4.1025
@@ -130,8 +131,29 @@ with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f
     price_service_charge = unit_price_service_charge * 12
 
     total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
-    print(f"Total Base Price: {total_price:,.2f} THB")
+    print(f"Total Electricity Base Price: {total_price:,.2f} THB")
     print("\tignore FT & vat\n\r")
+    
+    # Specify the file path
+    file_path = "anual_electricity_base_price.json"
+
+    # Check if the file exists
+    if os.path.exists(file_path):
+        # Delete the file
+        os.remove(file_path)
+        
+    param_anual_price = {
+        "price_on_peak": price_on_peak,
+        "price_off_peak": price_off_peak,
+        "price_demand_charge": price_demand_charge,
+        "price_service_charge":price_service_charge,
+        "total_price": total_price
+    }
+    
+    # Append the data to the JSON file
+    with open(file_path, "a") as json_file:
+        json.dump(param_anual_price, json_file)
+        json_file.write("\n")
     
     
     # Count the number of hours in on_peak_data
