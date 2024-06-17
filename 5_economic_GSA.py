@@ -295,8 +295,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         
     species = (
         "Before",
-        "After (1st-15th)",
-        "After (16th-30th)",
+        "After (1st-{}th)".format(contract_year),
+        "After ({}th-{})".format(contract_year+1, project_time_years),
     )
     weight_counts = {
         "Electricity Cost": np.array([anual_electricity_base_price, anual_electricity_base_price-solar_saving_average_1, anual_electricity_base_price-solar_saving_average_2]),
