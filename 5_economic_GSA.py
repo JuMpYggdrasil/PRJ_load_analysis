@@ -27,7 +27,7 @@ sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
-o_and_m_percentage = 2   # %
+o_and_m_percentage = 2.2   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
