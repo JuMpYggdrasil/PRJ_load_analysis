@@ -1,0 +1,57 @@
+
+PV Install_cap: 500.00 kW
+Energy of pv_produce: 637,500.00 kWh/year (Verify with PVSyst)
+  Monthly average PV energy production (kWh/month): 76,84,85,81,74,64,64,61,68,65,74,78
+Energy of pv_produce: 1,275.00 kWh/kWp/year
+Energy of pv_produce: 3.49 kWh/kWp/day
+Capacity Factor: 14.55 %
+Energy of pv_curtailed: 161,826.33 kWh  (25.38 %)
+Energy of pv_serve_load: 475,673.67 kWh
+PR ratio (PV): 0.76
+PR ratio (Load): 0.57
+  pv_serve_load -- On Peak: 387,005.61 kWh
+  pv_serve_load -- Off Peak: 42,560.64 kWh
+  pv_serve_load -- holiday: 46,107.43 kWh
+  CO2 Emission Reduction: 215,005 kg-CO2
+Total Base Price: 2,337,305.56 THB
+	ignore FT & vat
+
+PV < load @9.00: 257 days
+PV > load (in that day): 115 days
+Cycle/year 372 cycles
+5000 Cycle = 13.4 year
+max battery from PV curtailed: 2,062.91 kWh
+  -- suggest Battery Capacity: 1,416 kWh
+
+  -- installed Battery       : 900 kWh
+  -- suggest Battery Saving  : 478,691 THB  (5,319 THB/kWh/10years)
+                             : 66,578 kWh (Curtail 25.38 % -> 14.94 %)
+
+  -- installed Battery       : 500 kWh
+  -- suggest Battery Saving  : 301,225 THB  (6,025 THB/kWh/10years)
+                             : 38,439 kWh (Curtail 25.38 % -> 19.35 %)
+
+  -- installed Battery       : 400 kWh
+  -- suggest Battery Saving  : 246,613 THB  (6,165 THB/kWh/10years)
+                             : 31,144 kWh (Curtail 25.38 % -> 20.50 %)
+
+  -- installed Battery       : 300 kWh
+  -- suggest Battery Saving  : 189,559 THB  (6,319 THB/kWh/10years)
+                             : 23,782 kWh (Curtail 25.38 % -> 21.65 %)
+
+  -- installed Battery       : 250 kWh
+  -- suggest Battery Saving  : 160,155 THB  (6,406 THB/kWh/10years)
+                             : 20,078 kWh (Curtail 25.38 % -> 22.24 %)
+
+  -- installed Battery       : 200 kWh
+  -- suggest Battery Saving  : 130,219 THB  (6,511 THB/kWh/10years)
+                             : 16,335 kWh (Curtail 25.38 % -> 22.82 %)
+
+  -- installed Battery       : 150 kWh
+  -- suggest Battery Saving  : 99,382 THB  (6,625 THB/kWh/10years)
+                             : 12,514 kWh (Curtail 25.38 % -> 23.42 %)
+
+  -- installed Battery       : 100 kWh
+  -- suggest Battery Saving  : 67,673 THB  (6,767 THB/kWh/10years)
+                             : 8,597 kWh (Curtail 25.38 % -> 24.04 %)
+

@@ -15,19 +15,19 @@ import os
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
-tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
+tariff_rate = 4.25139 # THB/units     <==    ##### edit #####
 # >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add 0.6THB)
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 30000     # THB/kW  <==    ##### from contractor ##### Roof 30,000, carport 42,000
-margin = 12 # % approx 10%-12%
+cost_per_kw = 28400     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000
+margin = 10 # % approx 10%-12%
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
-o_and_m_percentage = 2.2   # %
+o_and_m_percentage = 2.5   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 3 #
 

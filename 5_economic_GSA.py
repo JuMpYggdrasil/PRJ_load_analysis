@@ -15,19 +15,19 @@ import os
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for FT)
-tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
+tariff_rate = 4.25139 # THB/units     <==    ##### edit #####
 # >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add FT 0.6THB)
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 30000     # THB/kW  <==    ##### from contractor ##### Roof 30,000, carport 42,000
-margin = 12 # % approx 10%-12%
+cost_per_kw = 24800     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000
+margin = 10 # % approx 10%-12%
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
-o_and_m_percentage = 2.2   # %
+o_and_m_percentage = 2.5   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
@@ -285,8 +285,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
                 cell.set_facecolor(row_colors[key[0]-1])
 
         # Save the table as an image
-        plt.savefig(f"result_{year_of_first_row}/GSA/table_image_{contract_year}yr.png", bbox_inches='tight', dpi=400)
-        df.to_csv(f"result_{year_of_first_row}/GSA/table_image_{contract_year}yr.csv", index=False)
+        plt.savefig(f"result_{year_of_first_row}/GSA/table_image_{installed_capacity:,.0f}kWp_{tariff_discount}_{contract_year}yr.png", bbox_inches='tight', dpi=400)
+        df.to_csv(f"result_{year_of_first_row}/GSA/table_image_{installed_capacity:,.0f}kWp_{tariff_discount}_{contract_year}yr.csv", index=False)
 
         # Show the plot
         plt.show()
@@ -326,19 +326,21 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
             total_height += weight_count[index]
 
 
+    
 
     ax.yaxis.set_units('THB/Year')
     ax.set_ylabel('Electricity Cost (THB/Year)')
     ax.set_title("Comparison Of Electricity Cost")
     ax.legend(loc="lower left")
     ax.set_ylim(0, roundup(anual_electricity_base_price*1.1,-5))  # set y-axis limit
-    
-    # Save the plot as PNG
-    plt.savefig(f"result_{year_of_first_row}/GSA/electricity_cost_comparison_{contract_year}yr.png")
+        
+    if ENplot:
+        # Save the plot as PNG
+        plt.savefig(f"result_{year_of_first_row}/GSA/electricity_cost_comparison_{installed_capacity:,.0f}kWp_{tariff_discount}_{contract_year}yr.png")
 
     # Create a DataFrame from weight_counts and save it as CSV
     df = pd.DataFrame(weight_counts)
-    df.to_csv(f"result_{year_of_first_row}/GSA/electricity_cost_comparison_{contract_year}yr.csv", index_label="Species")
+    df.to_csv(f"result_{year_of_first_row}/GSA/electricity_cost_comparison_{installed_capacity:,.0f}kWp_{tariff_discount}_{contract_year}yr.csv", index_label="Species")
     
     
     
@@ -386,8 +388,8 @@ for data in data_list:
         pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=True)
         print(f"tariff_discount: {tariff_discount:,.2f} %, pbp: {pbp:,.2f} yr")
         
-        tariff_discount_varies = list(range(10, 50, 5))
-        for tariff_discount_vary in tariff_discount_varies:
-            tariff_discount = tariff_discount_vary # %
-            pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=False)
-            print(f"tariff_discount: {tariff_discount:,.2f} % ({(tariff_rate*(1-tariff_discount/100)):,.2f}), pbp: {pbp:,.2f} yr")
+        # tariff_discount_varies = list(range(10, 50, 5))
+        # for tariff_discount_vary in tariff_discount_varies:
+        #     tariff_discount = tariff_discount_vary # %
+        #     pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=False)
+        #     print(f"tariff_discount: {tariff_discount:,.2f} % ({(tariff_rate*(1-tariff_discount/100)):,.2f}), pbp: {pbp:,.2f} yr")
