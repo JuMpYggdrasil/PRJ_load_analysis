@@ -15,8 +15,8 @@ import os
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for FT)
-tariff_rate = 4.25139 # THB/units     <==    ##### edit #####
-# >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add FT 0.6THB)
+tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
+# >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add FT 0.6THB, exclude VAT)
 
 
 # Inputs config
@@ -26,12 +26,13 @@ margin = 10 # % approx 10%-12%
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
-inverter_replacement_cost = 4200  # THB/kW
-o_and_m_percentage = 2.5   # %
+inverter_replacement_cost = 4200 # THB/kW
+o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
 o_and_m_start_at_year = 1 #
 
 tariff_discount = 15 # % include FT, exclude VAT
+tariff_escalation = 0 # %
 contract_year = 15
 
 ## EGAT_operation_cost
@@ -125,8 +126,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     EGAT_init_investment = installed_capacity * sale_price_per_kw + EGAT_operation_cost
     
     ## Calculate Annual Electricity Generation
-    annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
-    # annual_generation = energy_of_pv_serve_load # focus PV meet load
+    # annual_generation = installed_capacity * 24 * 365 * capacity_factor/100 # focus only PV production
+    annual_generation = energy_of_pv_serve_load # focus PV meet load
     # print("energy per year",annual_generation/1000,"MWh")
 
     print("")
@@ -153,7 +154,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         
         # Calculate O&M Cost for the year starting from year o_and_m_start_at_year
         if year >= o_and_m_start_at_year:
-            o_and_m_cost = EGAT_init_investment * o_and_m_percentage/100 * ((1 + o_and_m_escalation/100) ** (year - 3))
+            o_and_m_cost = EGAT_init_investment * o_and_m_percentage/100 * ((1 + o_and_m_escalation/100) ** (year - o_and_m_start_at_year))
             # Add Inverter Replacement Cost in the 10th year
             if year == 10:
                 inverter_replacement = inverter_replacement_cost * installed_capacity
@@ -167,8 +168,10 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         if year == 0:
             # Calculate Annual Revenue for the year
             solar_saving = 0
-        else:
+        elif year == 1:
             solar_saving = annual_energy_year * tariff_rate
+        else:
+            solar_saving = annual_energy_year * tariff_rate * ((1 + tariff_escalation/100) ** (year-1))
             
         # Append Annual Revenue to list
         solar_saving_list.append(solar_saving)
@@ -176,9 +179,11 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         if year == 0:
             # Calculate Annual Revenue for the year
             service_price_to_EGAT = 0
+        elif year == 1:
+            service_price_to_EGAT = annual_energy_year * tariff_rate * (1-tariff_discount/100)
         else:
             if year <= contract_year:
-                service_price_to_EGAT = annual_energy_year * tariff_rate * (1-tariff_discount/100)
+                service_price_to_EGAT = annual_energy_year * tariff_rate * (1-tariff_discount/100) * ((1 + tariff_escalation/100) ** (year-1))
             else:
                 service_price_to_EGAT = 0
         
@@ -187,7 +192,8 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         # Append year
         years.append(year)
         
-    service_price_average = roundup(Average(service_price_to_EGAT_list[1:contract_year+1]),-3)
+    service_price_average = roundup(service_price_to_EGAT_list[1],-3) # 1st-yr concept
+    # service_price_average = roundup(Average(service_price_to_EGAT_list[1:contract_year+1]),-3) # average concept
     service_price_average_list = [0] + [service_price_average]*contract_year+[0]*(project_time_years-contract_year)
     # print("service_price_average_list",service_price_average_list)
     
@@ -351,11 +357,12 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
         plt.cla()
 
 
-    EGAT_init_investment = EGAT_init_investment + sum(o_and_m_cost_list[o_and_m_start_at_year:contract_year+1])
-    pbp_frac = EGAT_init_investment/service_price_average
-        
+    EGAT_investment = EGAT_init_investment + sum(o_and_m_cost_list[o_and_m_start_at_year:contract_year+1])
+    EGAT_total_income = service_price_average * contract_year
+    pbp_frac = EGAT_investment/service_price_average
+    percent_profit = (EGAT_total_income - EGAT_investment)/EGAT_investment*100
     
-    return pbp_frac
+    return pbp_frac,percent_profit
     
     
 
@@ -385,11 +392,23 @@ for data in data_list:
         print("Installed Capacity:", installed_capacity)
         print("Capacity Factor:", capacity_factor)
 
-        pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=True)
-        print(f"tariff_discount: {tariff_discount:,.2f} %, pbp: {pbp:,.2f} yr")
+        pbp, percent_profit = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=True)
+        print(f"tariff_discount: {tariff_discount:,.2f} %, EGAT pbp: {pbp:,.2f} yr")
+        print(f"EGAT percent profit: {percent_profit:,.2f} %")
+
+
+
+# Access specific fields and perform calculations
+for data in data_list:
+    installed_capacity = data.get("installed_capacity")  # Get installed_capacity field
+    capacity_factor = data.get("capacity_factor")  # Get capacity_factor field
+
+    print("\n\rInstalled Capacity:", installed_capacity)
         
-        # tariff_discount_varies = list(range(10, 50, 5))
-        # for tariff_discount_vary in tariff_discount_varies:
-        #     tariff_discount = tariff_discount_vary # %
-        #     pbp = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=False)
-        #     print(f"tariff_discount: {tariff_discount:,.2f} % ({(tariff_rate*(1-tariff_discount/100)):,.2f}), pbp: {pbp:,.2f} yr")
+    # energy_of_pv_produce = data.get("energy_of_pv_produce")
+    energy_of_pv_serve_load = data.get("energy_of_pv_serve_load")   
+    tariff_discount_varies = list(range(10, 50, 5))
+    for tariff_discount_vary in tariff_discount_varies:
+        tariff_discount = tariff_discount_vary # %
+        pbp, percent_profit = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=False)
+        print(f"tariff_discount: {tariff_discount:,.2f} % ({(tariff_rate*(1-tariff_discount/100)):,.2f}), EGAT pbp: {pbp:,.2f} yr, EGAT profit: {percent_profit:,.2f} %")

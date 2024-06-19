@@ -6,31 +6,31 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [400,500] # kW
-PVSyst_Energy_per_year_per_kWp = 1275 # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
-PVSyst_GHI = 1679.1 # (PVSyst kWh/m2/year)
+PV_Install_Capacity = [15000] # kW
+PVSyst_Energy_per_year_per_kWp = [1587] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_GlobInc = 2045.3 # (PVSyst: GlobInc kWh/m2/year)
 
-# ## >69 kV
-# unit_price_on_peak = 4.1025
-# unit_price_off_peak = 2.5849
-# # unit_price_holiday = unit_price_off_peak
-# unit_price_demand_charge = 74.14
-# unit_price_service_charge = 312.24
-# # *** ignore FT 5-10% and vat 7%
-
-## 22-33 kV
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 
 # PV_Energy_Adjust_Factor_1_6 = PVSyst_Energy_per_year_per_kWp/737.41945*737.41945
 # PV_Energy_Adjust_Factor_7_12 = PVSyst_Energy_per_year_per_kWp/665.39245*665.39245
-PV_Energy_Adjust_Factor = (PVSyst_Energy_per_year_per_kWp)/1402.8119 # (PVSyst kWh/year/kWp)/1402.8119 change this factory to match PvSyst Energy per year
-
+PV_Energy_Adjust_Factor = [x/1402.8119 for x in PVSyst_Energy_per_year_per_kWp] # (PVSyst kWh/year/kWp)/1402.8119 change this factory to match PvSyst Energy per year
+print(PV_Energy_Adjust_Factor)
 
 kg_CO2_per_kWh = 0.452 
 
@@ -47,9 +47,10 @@ if not os.path.exists(folder_name):
     print(f"Folder '{folder_name}' created.")
 
 
-
+# === tracking or fixed === #
 df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 # df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+
 df_pv.set_index('timestamp', inplace=True)
 
 
@@ -93,6 +94,12 @@ if os.path.exists(file_path):
     os.remove(file_path)
 
 def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
+    def safe_index(lst, item):
+        try:
+            return lst.index(item)
+        except ValueError:
+            return -1
+
     # first_six_month_mask = (df_pv.index.month >= 1) & (df_pv.index.month <= 6)
     # last_six_month_mask = (df_pv.index.month >= 7) & (df_pv.index.month <= 12)
     # first_six_month_data = df_pv["pv"][first_six_month_mask] * pv_install_capacity * PV_Energy_Adjust_Factor_1_6
@@ -100,7 +107,13 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     
     # df_load["pv_produce"] = pd.concat([first_six_month_data, last_six_month_data])
     
-    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor
+    l_index = safe_index(PV_Install_Capacity,pv_install_capacity)
+    if l_index != -1:
+        PV_Energy_Adjust_Factor_gain= PV_Energy_Adjust_Factor[l_index]
+    else:
+        PV_Energy_Adjust_Factor_gain = sum(PVSyst_Energy_per_year_per_kWp)/len(PVSyst_Energy_per_year_per_kWp)
+    
+    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor_gain
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
     df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
     df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
@@ -165,8 +178,8 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
     sum_pv_serve_load = df_load['pv_serve_load'].sum()
     print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
-    print(f"PR ratio (PV): {(sum_pv_produce/PVSyst_GHI/pv_install_capacity):,.2f}")
-    print(f"PR ratio (Load): {(sum_pv_serve_load/PVSyst_GHI/pv_install_capacity):,.2f}")
+    print(f"PR ratio (PV): {(sum_pv_produce/PVSyst_GlobInc/pv_install_capacity):,.2f}")
+    print(f"PR ratio (Load): {(sum_pv_serve_load/PVSyst_GlobInc/pv_install_capacity):,.2f}")
 
     param_econ = {
         "installed_capacity": pv_install_capacity,

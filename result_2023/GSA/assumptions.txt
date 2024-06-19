@@ -1,6 +1,6 @@
 
 Assumption:
-Tariff Rate Average (with VAT): 4.25139 THB/units
+Tariff Rate Average (with VAT): 4.19109 THB/units
 
 Inputs Configuration:
 Project Time (Years): 25 years
@@ -10,7 +10,7 @@ Sale Price per kW: 27280.00 THB/kW
 Solar Degradation First Year: 2 %
 Solar Degradation After First Year: 0.55 %
 Inverter Replacement Cost: 4200 THB/kW
-O&M Percentage: 2.5 %
+O&M Percentage: 2 %
 O&M Escalation Rate: 0 %
 O&M Starts at Year: 1
 
