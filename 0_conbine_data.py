@@ -10,8 +10,15 @@ from tkinter import filedialog
 
 output_file_name = r'combined_data.csv'
 
-## PEA AMR format setting
-skiprows_count = 8 #DEFAULT 5
+# ## PEA AMR format setting
+# skiprows_count = 8 #DEFAULT 5
+# peak_string = "RATE A"
+# off_peak_string = "RATE B"
+# holiday_string = "RATE C"
+# header_column_index = [0, 1, 3, 5]
+
+## Robinson AMR format setting
+skiprows_count = 1 #DEFAULT 5
 peak_string = "RATE A"
 off_peak_string = "RATE B"
 holiday_string = "RATE C"
@@ -95,6 +102,8 @@ def check_xlsx_files_exist(directory):
     for file in files:
         if file.endswith('.xlsx'):
             return True
+        elif file.endswith('.csv'):
+            return False
     
     # No .xlsx file found
     return False
@@ -105,7 +114,7 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
     all_dataframes = []
 
     # List all the Excel files in the directory
-    excel_files = [file for file in os.listdir(excel_files_dir) if file.endswith(('.xlsx', '.xls'))]
+    excel_files = [file for file in os.listdir(excel_files_dir) if file.endswith(('.xlsx', '.xls', '.csv'))]
 
     # Sort the files to ensure they are processed in the correct order
     excel_files.sort()
