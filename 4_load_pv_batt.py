@@ -6,9 +6,9 @@ import json
 from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
-PV_Install_Capacity = [15000] # kW
-PVSyst_Energy_per_year_per_kWp = [1587] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
-PVSyst_GlobInc = 2045.3 # (PVSyst: GlobInc kWh/m2/year)
+PV_Install_Capacity = [1350] # kW
+PVSyst_Energy_per_year_per_kWp = [1328] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_GlobInc = 1675.3 # (PVSyst: GlobInc kWh/m2/year)
 
 ## >69 kV
 unit_price_on_peak = 4.1025
@@ -285,8 +285,10 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
     print(f"Total Base Price: {total_price:,.2f} THB")
     print("\tignore FT & vat\n\r")
-        
-    discharge_time_mask = (df.index.hour >= 9) & (df.index.hour < 11)
+    
+    discharge_time_start = 18
+    discharge_time_finish = 20
+    discharge_time_mask = (df.index.hour >= discharge_time_start) & (df.index.hour < discharge_time_finish+1)
     load_existing_kWh_df = df[discharge_time_mask]['load_existing'].resample('D').sum() # forward euler
 
     mask_arb = df[discharge_time_mask]['load_existing'].resample('D').sum() > 0
@@ -296,7 +298,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
 
     # Count values less than zero
     count_curtailed_day = (mask_cur).sum()
-    print(f"PV < load @9.00: {count_arbitrage_day} days")
+    print(f"PV < load @{discharge_time_start}.00: {count_arbitrage_day} days")
     print(f"PV > load (in that day): {count_curtailed_day} days")
 
     
@@ -354,12 +356,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -373,12 +375,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -392,12 +394,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -411,12 +413,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -430,12 +432,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -449,12 +451,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -469,12 +471,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
@@ -489,12 +491,12 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # arbitrage only (discharge) 9.00-11.00 in case load > PV
     batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
-    price_batt_arbitrage = sum_batt_arbitrage_kWh * 2
+    price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * 4.1)
+    price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
     
     total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
