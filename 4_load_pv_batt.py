@@ -10,21 +10,21 @@ PV_Install_Capacity = [1350] # kW
 PVSyst_Energy_per_year_per_kWp = [1328] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
 PVSyst_GlobInc = 1675.3 # (PVSyst: GlobInc kWh/m2/year)
 
-## >69 kV
-unit_price_on_peak = 4.1025
-unit_price_off_peak = 2.5849
-# unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 74.14
-unit_price_service_charge = 312.24
-# *** ignore FT 5-10% and vat 7%
-
-# ## 22-33 kV
-# unit_price_on_peak = 4.1839
-# unit_price_off_peak = 2.6037
+# ## >69 kV
+# unit_price_on_peak = 4.1025
+# unit_price_off_peak = 2.5849
 # # unit_price_holiday = unit_price_off_peak
-# unit_price_demand_charge = 132.93
+# unit_price_demand_charge = 74.14
 # unit_price_service_charge = 312.24
 # # *** ignore FT 5-10% and vat 7%
+
+## 22-33 kV
+unit_price_on_peak = 4.1839
+unit_price_off_peak = 2.6037
+# unit_price_holiday = unit_price_off_peak
+unit_price_demand_charge = 132.93
+unit_price_service_charge = 312.24
+# *** ignore FT 5-10% and vat 7%
 
 
 # PV_Energy_Adjust_Factor_1_6 = PVSyst_Energy_per_year_per_kWp/737.41945*737.41945
@@ -288,7 +288,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     
     discharge_time_start = 18
     discharge_time_finish = 20
-    discharge_time_mask = (df.index.hour >= discharge_time_start) & (df.index.hour < discharge_time_finish+1)
+    discharge_time_mask = (df.index.hour >= discharge_time_start) & (df.index.hour <= discharge_time_finish)
     load_existing_kWh_df = df[discharge_time_mask]['load_existing'].resample('D').sum() # forward euler
 
     mask_arb = df[discharge_time_mask]['load_existing'].resample('D').sum() > 0
