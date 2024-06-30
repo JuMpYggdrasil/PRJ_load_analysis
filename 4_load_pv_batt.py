@@ -47,6 +47,8 @@ if not os.path.exists(folder_name):
     print(f"Folder '{folder_name}' created.")
 
 
+
+
 # === tracking or fixed === #
 df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
 # df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
@@ -285,31 +287,82 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
     print(f"Total Base Price: {total_price:,.2f} THB")
     print("\tignore FT & vat\n\r")
-    
-    discharge_time_start = 18
-    discharge_time_finish = 20
-    discharge_time_mask = (df.index.hour >= discharge_time_start) & (df.index.hour <= discharge_time_finish)
-    load_existing_kWh_df = df[discharge_time_mask]['load_existing'].resample('D').sum() # forward euler
-
-    mask_arb = df[discharge_time_mask]['load_existing'].resample('D').sum() > 0
-    mask_cur = df[discharge_time_mask]['pv_curtailed'].resample('D').sum() > 0
-    # Count values greater than zero
-    count_arbitrage_day = (mask_arb).sum()
-
-    # Count values less than zero
-    count_curtailed_day = (mask_cur).sum()
-    print(f"PV < load @{discharge_time_start}.00: {count_arbitrage_day} days")
-    print(f"PV > load (in that day): {count_curtailed_day} days")
 
     
-    count_both_case_day = (mask_arb & mask_cur).sum() + 365
-    print(f"Cycle/year {count_both_case_day} cycles")
-    print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
+    # Define the time ranges and masks
+    charge_time_start = 6
+    charge_time_finish = 8
+    charge_time_mask = (df.index.hour >= charge_time_start) & (df.index.hour <= charge_time_finish)
 
+    extra_time_start = 9
+    extra_time_finish = 10
+    extra_time_mask = (df.index.hour >= extra_time_start) & (df.index.hour <= extra_time_finish)
 
+    post_extra_time_start = 11
+    post_extra_time_finish = 13
+    post_extra_time_mask = (df.index.hour >= post_extra_time_start) & (df.index.hour <= post_extra_time_finish)
+
+    # Calculate load_existing_charge_kWh_df during charge time
+    load_existing_charge_kWh_df = df[charge_time_mask]['load_existing'].resample('D').sum()
+
+    # Calculate load_existing_extra_discharge_kWh_df during extra time
+    load_existing_extra_discharge_kWh_df = df[extra_time_mask]['load_existing'].resample('D').sum()
+
+    # Calculate pv_curtailed_charge_kWh_df during post-extra time
+    pv_curtailed_charge_kWh_df = df[post_extra_time_mask]['pv_curtailed'].resample('D').sum()
+
+    # Create the initial intermediate DataFrame
+    initial_intermediate_df = pd.DataFrame({
+        'load_existing_charge_kWh': load_existing_charge_kWh_df,
+        'load_existing_extra_discharge_kWh': load_existing_extra_discharge_kWh_df,
+        'pv_curtailed_charge_kWh': pv_curtailed_charge_kWh_df
+    })
+
+    # Create masks for days where load_existing_extra_discharge_kWh_df > 0 and pv_curtailed_charge_kWh_df > 0
+    extra_discharge_mask = load_existing_extra_discharge_kWh_df > 0
+    post_extra_time_mask = pv_curtailed_charge_kWh_df > 0
+
+    extra_condition_mask = extra_discharge_mask & post_extra_time_mask
+
+    # # Apply masks to filter the DataFrame
+    # filtered_intermediate_df = initial_intermediate_df[extra_condition_mask]
+
+    
     pv_curtailed_kWh_df = df['pv_curtailed'].resample('D').sum()
     pv_curtailed_kWh_df = pv_curtailed_kWh_df[pv_curtailed_kWh_df > 1]
+    # Filter pv_curtailed_kWh_df for dates where pv_curtailed sum is greater than 1
+    pv_curtailed_filtered_dates = pv_curtailed_kWh_df[pv_curtailed_kWh_df > 1].index
     max_pv_curtailed_kWh = pv_curtailed_kWh_df.max()
+
+    
+
+    # Invert the filter to get dates where pv_curtailed sum is not greater than 1
+    load_existing_charge_kWh_df_1 = load_existing_charge_kWh_df[~load_existing_charge_kWh_df.index.isin(pv_curtailed_filtered_dates)]
+    load_existing_charge_kWh_df_2 = load_existing_charge_kWh_df[extra_condition_mask]
+
+    # Combine load_existing_charge_kWh_df_1 and load_existing_charge_kWh_df_2
+    load_existing_charge_kWh_df = pd.concat([load_existing_charge_kWh_df_1, load_existing_charge_kWh_df_2]).sort_index()
+
+    count_curtailed_day = pv_curtailed_kWh_df.index.nunique()
+    count_arbitrage_day = load_existing_charge_kWh_df_1.index.nunique()
+    count_double_cycle_day = load_existing_charge_kWh_df_2.index.nunique()
+
+    # Print the count
+    print(f"Number of dates can do Double Cycles: {count_double_cycle_day} days")
+    print(f"Number of count_curtailed_day       : {count_curtailed_day} days")
+    print(f"Number of count_arbitrage_day       : {count_arbitrage_day} days")
+    print(f"                                365 ? {(count_curtailed_day+count_arbitrage_day)}")
+
+
+
+    count_both_case_day = count_double_cycle_day + count_curtailed_day + count_arbitrage_day
+    print(f"Cycle/year {count_both_case_day} cycles")
+    print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
+    print(f"6000 Cycle = {(6000/count_both_case_day):,.1f} year")
+    print(f"8000 Cycle = {(8000/count_both_case_day):,.1f} year")
+
+
+    
 
     # Calculate the 40th percentile -> mean almost use full capacity
     percentile_40_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.40)
@@ -350,24 +403,29 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     # ============= SELECT BATTERY SIZE ============= #
     # =============================================== #
     # batt_cap_selected = percentile_60_pv_curtailed_kWh
-    battery_capacities = [500,1000]  # example capacities in kWh
+    battery_capacities = [500, 700, 900]  # example capacities in kWh
     for batt_capacity_selected in battery_capacities:
-        batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt performance 80%
+        batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
 
-        # arbitrage only (discharge) 9.00-11.00 in case load > PV
-        batt_arbitrage_kWh_df = np.where(load_existing_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_kWh_df)
-        sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.9
+        # arbitrage only (discharge) in case load > PV
+        batt_arbitrage_kWh_df = np.where(load_existing_charge_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_charge_kWh_df)
+        sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.7
         price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
         # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
         batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
         sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
         price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
+        Average_load_factor = 0.42
+        demand_charge_saving = (count_double_cycle_day+count_arbitrage_day)/365 * batt_cap_selected / 3 * unit_price_demand_charge * (1-Average_load_factor) # interval discharge time= 3 hours, can reduce 10 mth/yr
         
-        total_price_batt = price_batt_store_curtailed + price_batt_arbitrage
+        total_price_saving_batt = price_batt_store_curtailed + price_batt_arbitrage + demand_charge_saving
         print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
-        print(f"  -- suggest Battery Saving  : {total_price_batt:,.0f} THB  ({(total_price_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
-        print(f"                             : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
+        print(f"  -- suggest Battery Saving  : {total_price_saving_batt:,.0f} THB  ({(total_price_saving_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+        print(f"         - curtailed saving  : {price_batt_store_curtailed:,.0f} THB")
+        print(f"         - arbitrage saving  : {price_batt_arbitrage:,.0f} THB")
+        print(f"         - demand charge sav : {demand_charge_saving:,.0f} THB")
+        print(f"         - curtailed energy  : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
         print(f"")
     
     
