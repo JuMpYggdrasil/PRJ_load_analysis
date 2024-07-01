@@ -10,19 +10,19 @@ from tkinter import filedialog
 
 output_file_name = r'combined_data.csv'
 
-# ## PEA AMR format setting
-# skiprows_count = 8 #DEFAULT 5
-# peak_string = "RATE A"
-# off_peak_string = "RATE B"
-# holiday_string = "RATE C"
-# header_column_index = [0, 1, 3, 5]
-
-## Robinson AMR format setting
-skiprows_count = 1 #DEFAULT 5
+## PEA AMR format setting
+skiprows_count = 8 #DEFAULT 5
 peak_string = "RATE A"
 off_peak_string = "RATE B"
 holiday_string = "RATE C"
 header_column_index = [0, 1, 3, 5]
+
+# ## Robinson AMR format setting
+# skiprows_count = 1 #DEFAULT 5
+# peak_string = "RATE A"
+# off_peak_string = "RATE B"
+# holiday_string = "RATE C"
+# header_column_index = [0, 1, 3, 5]
 
 # ### PEA kWh AMR format setting (don't forget to scale load x4)
 # skiprows_count = 8 #DEFAULT 8

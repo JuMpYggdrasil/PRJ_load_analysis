@@ -19,5 +19,5 @@ def split_excel_sheets(input_file):
         df.to_excel(output_file, index=False)
 
 # Example usage:
-input_file = "source\RAJBURI_COGEN\Load Profile 115 kV ปี 2023.xlsx"
+input_file = "source\PAPA_chaam\ประเมินการติดตั้ง ที่ทำการประปาชะอำ.xlsx"
 split_excel_sheets(input_file)
