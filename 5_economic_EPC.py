@@ -21,8 +21,8 @@ tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 24800     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000
-margin = 10 # % approx 10%-12%
+cost_per_kw = 30500     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000, float 30500
+margin = 12 # % approx 10%-12%
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
@@ -39,7 +39,7 @@ o_and_m_start_at_year = 3 #
 # from excel 3 person 7 day approx 127,000 +(27*km) -- default
 # from excel 7 person 7 day approx 223,000 +(27*km)
 general_work_cost = 127000
-distance_from_EGAT_km = 160      # <<----- input distance from EGAT HQ (km)
+distance_from_EGAT_km = 180      # <<----- input distance from EGAT HQ (km)
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 print("EGAT_operation_cost= ",EGAT_operation_cost)
 

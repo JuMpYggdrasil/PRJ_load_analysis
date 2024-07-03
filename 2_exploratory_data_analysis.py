@@ -100,7 +100,7 @@ plt.show()
 sns.set_palette("bright")
 # Explore seasonality with a box plot
 sns.boxplot(x='month', y='load', data=data, showfliers = False, palette='bright')
-plt.title('Seasonal Variation in Load')
+plt.title('Seasonal Variation in Load (every day)')
 plt.xlabel('Month')
 plt.ylabel('Load')
 plt.savefig(f"result_{year_of_first_row}/Seasonal.png", format="png")
