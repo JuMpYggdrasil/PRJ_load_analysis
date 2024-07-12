@@ -11,7 +11,7 @@ from tkinter import filedialog
 output_file_name = r'combined_data.csv'
 
 ## PEA AMR format setting
-skiprows_count = 8 #DEFAULT 5
+skiprows_count = 5 #DEFAULT 5
 peak_string = "RATE A"
 off_peak_string = "RATE B"
 holiday_string = "RATE C"

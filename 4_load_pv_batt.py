@@ -7,8 +7,8 @@ from deap import base, creator, tools, algorithms
 
 # PV_Install_Capacity = [0.0000001,150,200] # kW
 PV_Install_Capacity = [380] # kW1350
-PVSyst_Energy_per_year_per_kWp = [1287.72] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
-PVSyst_GlobInc = 1764.6 # (PVSyst: GlobInc kWh/m2/year)
+PVSyst_Energy_per_year_per_kWp = [1250] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_GlobInc = 1666.1 # (PVSyst: GlobInc kWh/m2/year)
 
 # ## >69 kV
 # unit_price_on_peak = 4.1025
@@ -32,7 +32,7 @@ unit_price_service_charge = 312.24
 PV_Energy_Adjust_Factor = [x/1402.8119 for x in PVSyst_Energy_per_year_per_kWp] # (PVSyst kWh/year/kWp)/1402.8119 change this factory to match PvSyst Energy per year
 print(PV_Energy_Adjust_Factor)
 
-kg_CO2_per_kWh = 0.452 
+kg_CO2_per_kWh = 0.4857
 
 df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)

@@ -15,14 +15,14 @@ import os
 ## annual energy = installed_capacity x 24 x 365 x capacity_factor/100
 
 ## tariff_rate_average = (tariff_rate_on_peak*242+tariff_rate_off_peak*123)/365 (add more 0.6 for vat)
-tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
+tariff_rate = 5.5/1.07 # THB/units     <==    ##### edit #####
 # >=69kV -> 4.19109, 22,33kV -> 4.25139,<22kV -> 4.36 (adready add 0.6THB)
 
 
 # Inputs config
 project_time_years = 25 # years
-cost_per_kw = 30500     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000, float 30500
-margin = 12 # % approx 10%-12%
+cost_per_kw =  8555000/380      # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000, float 30500
+margin = 10 # % approx 10%-12%
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
@@ -38,8 +38,8 @@ o_and_m_start_at_year = 3 #
 # from excel 3 person 5 day approx  97,000 +(27*km)
 # from excel 3 person 7 day approx 127,000 +(27*km) -- default
 # from excel 7 person 7 day approx 223,000 +(27*km)
-general_work_cost = 127000
-distance_from_EGAT_km = 180      # <<----- input distance from EGAT HQ (km)
+general_work_cost = 468538#127000
+distance_from_EGAT_km = 0      # <<----- input distance from EGAT HQ (km)
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 print("EGAT_operation_cost= ",EGAT_operation_cost)
 
@@ -234,7 +234,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
 
     print("Installed Capacity: {:,.2f} kWp".format(installed_capacity))
     total_energy = sum(annual_energy_year_list)
-    print("Total Energy: {:,.2f} MWp".format(total_energy/1000))
+    print("Total Energy ({}-yr): {:,.2f} MWh".format(project_time_years,total_energy/1000))
     print("Capital Investment: {:,.2f} THB".format(initial_investment))
     average_saving_pv = sum(revenue_of_energy_list[1:])/len(revenue_of_energy_list[1:])
     print("Average Savings: {:,.2f} THB/Year".format(average_saving_pv))
@@ -254,7 +254,7 @@ def calculate_economic(installed_capacity,capacity_factor,energy_of_pv_serve_loa
     lifetime_year_saving = "Total "+str(project_time_years)+"-Year Savings"
     
     data = {
-        "Metric": ["Installed Capacity", "Total Energy", "Capital Investment", "Average Savings", "O&M Cost", "Average Net Savings", "Inverter Replacement", lifetime_year_saving, "ROI", "IRR", "Payback Period"],
+        "Metric": ["Installed Capacity", "Total Energy ({}-yr)".format(project_time_years), "Capital Investment", "Average Savings", "O&M Cost", "Average Net Savings", "Inverter Replacement", lifetime_year_saving, "ROI", "IRR", "Payback Period"],
         "Value": ["{:,.2f}".format(installed_capacity),"{:,.2f}".format(total_energy/1000), "{:,.2f}".format(initial_investment), "{:,.2f}".format(average_saving_pv), "{:,.2f}".format(O_M_average_cost), "{:,.2f}".format(average_net_saving), "{:,.2f}".format(inverter_replacement_at_first_year), "{:,.2f}".format(total_25_year_saving), "{:,.2f}".format(ROI), "{:,.2f}".format(irr_percent), "{:,.0f} years {:,.0f} months".format(pbp_yr,pbp_mo)],
         "Unit": ["kWp","MWh", "THB", "THB/Year", "THB/Year", "THB/Year", "THB", "THB", "%", "%", ""]
     }
@@ -342,6 +342,7 @@ for data in data_list:
         print("Installed Capacity:", installed_capacity)
         print("Capacity Factor:", capacity_factor)
         gen_sensitivity = [-10, -5, 0, 5, 10]
+        # gen_sensitivity = [0]
         irr_results = []
         pbp_results = []
 
