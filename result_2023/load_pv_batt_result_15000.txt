@@ -1,0 +1,18 @@
+
+PV Install_cap: 15000.00 kW
+Energy of pv_produce: 23,700,000.00 kWh/year (Verify with PVSyst)
+  Monthly average PV energy production (kWh/month): 2,828,3,119,3,143,3,023,2,741,2,367,2,390,2,282,2,513,2,431,2,754,2,909
+Energy of pv_produce: 1,580.00 kWh/kWp/year
+Energy of pv_produce: 4.33 kWh/kWp/day
+Capacity Factor: 18.04 %
+Energy of pv_curtailed: 212,189.66 kWh  (0.90 %)
+Energy of pv_serve_load: 23,487,810.34 kWh
+PR ratio (PV): 0.77
+PR ratio (Load): 0.77
+  pv_serve_load -- On Peak: 15,069,617.92 kWh
+  pv_serve_load -- Off Peak: 1,643,721.59 kWh
+  pv_serve_load -- holiday: 6,774,470.82 kWh
+  CO2 Emission Reduction: 11,408,029 kg-CO2
+Total Base Price: 103,183,645.14 THB
+	ignore FT & vat
+

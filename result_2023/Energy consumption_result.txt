@@ -1,33 +1,33 @@
 
 Energy consumption -- Load (kWh)
-1 January: 79,384 kWh, Load Factor: 28.9%
-2 February: 77,424 kWh, Load Factor: 28.6%
-3 March: 121,352 kWh, Load Factor: 30.7%
-4 April: 102,590 kWh, Load Factor: 22.5%
-5 May: 154,784 kWh, Load Factor: 31.6%
-6 June: 144,994 kWh, Load Factor: 33.9%
-7 July: 141,218 kWh, Load Factor: 33.5%
-8 August: 150,448 kWh, Load Factor: 31.4%
-9 September: 140,288 kWh, Load Factor: 31.0%
-10 October: 124,282 kWh, Load Factor: 27.2%
-11 November: 117,632 kWh, Load Factor: 28.9%
-12 December: 104,317 kWh, Load Factor: 24.4%
+1 January: 18,143,480 kWh, Load Factor: 89.7%
+2 February: 16,056,960 kWh, Load Factor: 88.0%
+3 March: 17,693,840 kWh, Load Factor: 87.8%
+4 April: 14,168,600 kWh, Load Factor: 72.8%
+5 May: 15,748,280 kWh, Load Factor: 78.3%
+6 June: 16,557,800 kWh, Load Factor: 84.3%
+7 July: 12,236,880 kWh, Load Factor: 61.8%
+8 August: 14,708,880 kWh, Load Factor: 72.9%
+9 September: 12,345,280 kWh, Load Factor: 64.8%
+10 October: 18,306,360 kWh, Load Factor: 91.0%
+11 November: 17,312,200 kWh, Load Factor: 88.4%
+12 December: 15,027,920 kWh, Load Factor: 73.9%
 
 
-Average load factor: 29 %
+Average load factor: 79 %
 
 
-Energy of On Peak Data: 1,133,034.75 kWh
-Energy of Off Peak Data: 222,012.50 kWh
-Energy of holiday Data: 103,666.50 kWh
-Total Energy: 1,458,713.75 kWh
-Sum of all Data: 1,458,713.75 kWh
-Sum of demand_charge: 6,786.50 kW
+Energy of On Peak Data: 72,598,360.00 kWh
+Energy of Off Peak Data: 61,543,240.00 kWh
+Energy of holiday Data: 54,164,880.00 kWh
+Total Energy: 188,306,480.00 kWh
+Sum of all Data: 188,306,480.00 kWh
+Sum of demand_charge: 324,560.00 kW
 
-price_on_peak: 4,740,504.09 THB
-price_off_peak: 847,970.41 THB
-price_demand_charge: 902,129.45 THB
-Total Electricity Base Price: 6,494,350.83 THB
+price_on_peak: 303,744,278.40 THB
+price_off_peak: 301,269,232.04 THB
+price_demand_charge: 43,143,760.80 THB
+Total Electricity Base Price: 648,161,018.13 THB
 	ignore FT & vat
 
 On-peak days: 140.8

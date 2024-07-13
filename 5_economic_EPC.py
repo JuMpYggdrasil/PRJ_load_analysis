@@ -29,7 +29,7 @@ solar_degradation_after_first_year = 0.55  # %
 inverter_replacement_cost = 4200  # THB/kW
 o_and_m_percentage = 2   # %
 o_and_m_escalation = 0   # Escalation rate
-o_and_m_start_at_year = 3 #
+o_and_m_start_at_year = 5 #
 
 ## EGAT_operation_cost
 # from excel 2 person 3 day approx  59,000 +(27*km) -- minimum
