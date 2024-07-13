@@ -42,8 +42,8 @@ contract_year = 20
 # from excel 3 person 5 day approx  97,000 +(27*km)
 # from excel 3 person 7 day approx 127,000 +(27*km) -- default
 # from excel 7 person 7 day approx 223,000 +(27*km)
-general_work_cost = 127000
-distance_from_EGAT_km = 200      # <<----- input distance from EGAT HQ (km)
+general_work_cost = 468538
+distance_from_EGAT_km = 0      # <<----- input distance from EGAT HQ (km)
 EGAT_operation_cost = general_work_cost+(27*distance_from_EGAT_km)
 print("EGAT_operation_cost= ",EGAT_operation_cost)
 
@@ -407,7 +407,7 @@ for data in data_list:
         
     # energy_of_pv_produce = data.get("energy_of_pv_produce")
     energy_of_pv_serve_load = data.get("energy_of_pv_serve_load")   
-    tariff_discount_varies = list(range(10, 50, 5))
+    tariff_discount_varies = list(range(10, 60, 5))
     for tariff_discount_vary in tariff_discount_varies:
         tariff_discount = tariff_discount_vary # %
         pbp, percent_profit = calculate_economic(installed_capacity, capacity_factor, energy_of_pv_serve_load, tariff_rate, ENplot=False)
