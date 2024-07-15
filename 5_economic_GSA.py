@@ -22,7 +22,7 @@ tariff_rate = 4.19109 # THB/units     <==    ##### edit #####
 # Inputs config
 project_time_years = 25 # years
 cost_per_kw = 268068000/15000     # THB/kW  <==    ##### from contractor ##### Roof 28400-30000, carport 42000
-margin = 10 # % approx 10%-12%
+margin = 0 # % approx 10%-12% : suggest GSA add 3-5% margin for EGAT operaitng cost(ignored if known EGAT_operation_cost)
 sale_price_per_kw = cost_per_kw*(1+margin/100) # THB/kW
 solar_degradation_first_year = 2    # %  https://poweramr.in/blog/performance-ratio
 solar_degradation_after_first_year = 0.55  # %
