@@ -2,20 +2,43 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from datetime import datetime
 #pip install msvc-runtime for display on tablet window
 
 # Create a function to load and process the selected .csv file
 def load_and_process_data(file_path):
-        
     # Load the historical data with the specified timestamp format
+    # date_format = '%d/%m/%Y %H.%M' # -- default --
+    # date_format = '%m/%d/%Y %H:%M'
     # date_format = '%d.%m.%Y %H:%M'
     # date_format = '%d.%m.%Y %H.%M'
     # date_format = '%d/%m/%Y %H:%M'
-    date_format = '%d/%m/%Y %H.%M' # default
-    # date_format = '%m/%d/%Y %H:%M'
     # date_format = '%m/%d/%Y %H.%M'
     # date_format ='ISO8601'
-    data = pd.read_csv(file_path, parse_dates=['Date'], date_format=date_format)
+
+    # Custom date parsing function
+    def parse_date_format(date_str):
+        formats = [
+            '%d/%m/%Y %H.%M', '%m/%d/%Y %H:%M', '%d.%m.%Y %H:%M',
+            '%d.%m.%Y %H.%M', '%d/%m/%Y %H:%M', '%m/%d/%Y %H.%M', 
+            '%Y-%m-%dT%H:%M:%S'  # ISO 8601 format
+        ]
+        for date_format in formats:
+            try:
+                datetime.strptime(date_str, date_format)
+                return date_format
+            except ValueError:
+                continue
+        raise ValueError(f"Date {date_str} is not in a recognized format.")
+
+    # Read the CSV without parsing dates initially
+    data = pd.read_csv(file_path)
+
+    # Apply the custom function to identify and parse the date format for each entry
+    data['Date'] = data['Date'].apply(lambda x: datetime.strptime(x, parse_date_format(x)))
+
+    # Optionally, convert the 'Date' column to datetime64 format
+    data['Date'] = pd.to_datetime(data['Date'])
     data = data.sort_index()
     
 
