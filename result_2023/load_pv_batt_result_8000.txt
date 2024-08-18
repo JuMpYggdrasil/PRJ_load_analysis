@@ -1,5 +1,5 @@
 
-PV Install_cap: 8000.00 kW
+PV Install_cap: 8,000.00 kW
 Energy of pv_produce: 11,535,200.00 kWh/year (Verify with PVSyst)
   Monthly average PV energy production (kWh/month): 1,376,1,518,1,530,1,471,1,334,1,152,1,163,1,111,1,223,1,183,1,340,1,416
 Energy of pv_produce: 1,441.90 kWh/kWp/year

@@ -168,6 +168,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
 
     sum_pv_produce = df_load['pv_produce'].sum()
     capacity_factor = (sum_pv_produce/pv_install_capacity/8760*100)
+    # print(f"pv_install_capacity: {pv_install_capacity:,.2f} kW")
     print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year (Verify with PVSyst)")
     # Initialize list to store monthly average PV energy
     pv_energy_monthly = []
@@ -299,15 +300,15 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
 
     
     # Define the time ranges and masks
-    charge_time_start = 6
+    charge_time_start = 6 # charge
     charge_time_finish = 8
     charge_time_mask = (df.index.hour >= charge_time_start) & (df.index.hour <= charge_time_finish)
 
-    extra_time_start = 9
+    extra_time_start = 9 # discharge
     extra_time_finish = 10
     extra_time_mask = (df.index.hour >= extra_time_start) & (df.index.hour <= extra_time_finish)
 
-    post_extra_time_start = 11
+    post_extra_time_start = 11 # charge
     post_extra_time_finish = 13
     post_extra_time_mask = (df.index.hour >= post_extra_time_start) & (df.index.hour <= post_extra_time_finish)
 
@@ -405,34 +406,34 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     
 
 
-    # =============================================== #
-    # ============= SELECT BATTERY SIZE ============= #
-    # =============================================== #
-    # batt_cap_selected = percentile_60_pv_curtailed_kWh
-    battery_capacities = [500, 700, 900]  # example capacities in kWh
-    for batt_capacity_selected in battery_capacities:
-        batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
+        # =============================================== #
+        # ============= SELECT BATTERY SIZE ============= #
+        # =============================================== #
+        # batt_cap_selected = percentile_60_pv_curtailed_kWh
+        battery_capacities = [500, 700, 900]  # example capacities in kWh
+        for batt_capacity_selected in battery_capacities:
+            batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
 
-        # arbitrage only (discharge) in case load > PV
-        batt_arbitrage_kWh_df = np.where(load_existing_charge_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_charge_kWh_df)
-        sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.7
-        price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
-        # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+            # arbitrage only (discharge) in case load > PV
+            batt_arbitrage_kWh_df = np.where(load_existing_charge_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_charge_kWh_df)
+            sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.7
+            price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
+            # price_batt_arbitrage = batt_cap_selected*365*0.70*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 70%
 
-        batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
-        sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-        price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
-        Average_load_factor = 0.42
-        demand_charge_saving = (count_double_cycle_day+count_arbitrage_day)/365 * batt_cap_selected / 3 * unit_price_demand_charge * (1-Average_load_factor) # interval discharge time= 3 hours, can reduce 10 mth/yr
-        
-        total_price_saving_batt = price_batt_store_curtailed + price_batt_arbitrage + demand_charge_saving
-        print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
-        print(f"  -- suggest Battery Saving  : {total_price_saving_batt:,.0f} THB  ({(total_price_saving_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
-        print(f"         - curtailed saving  : {price_batt_store_curtailed:,.0f} THB")
-        print(f"         - arbitrage saving  : {price_batt_arbitrage:,.0f} THB")
-        print(f"         - demand charge sav : {demand_charge_saving:,.0f} THB")
-        print(f"         - curtailed energy  : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
-        print(f"")
+            batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+            sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
+            price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
+            Average_load_factor = 0.42
+            demand_charge_saving = (count_double_cycle_day+count_arbitrage_day)/365 * batt_cap_selected / 3 * unit_price_demand_charge * (1-Average_load_factor) # interval discharge time= 3 hours, can reduce 10 mth/yr
+            
+            total_price_saving_batt = price_batt_store_curtailed + price_batt_arbitrage + demand_charge_saving
+            print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+            print(f"  -- suggest Battery Saving  : {total_price_saving_batt:,.0f} THB  ({(total_price_saving_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+            print(f"         - curtailed saving  : {price_batt_store_curtailed:,.0f} THB")
+            print(f"         - arbitrage saving  : {price_batt_arbitrage:,.0f} THB")
+            print(f"         - demand charge sav : {demand_charge_saving:,.0f} THB")
+            print(f"         - curtailed energy  : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
+            print(f"")
     
     
     
@@ -453,7 +454,7 @@ for install_cap in PV_Install_Capacity:
         # Redirect the standard output to the text file
         sys.stdout = f
         
-        print(f"\n\rPV Install_cap: {install_cap:.2f} kW")
+        print(f"\n\rPV Install_cap: {install_cap:,.2f} kW")
         cal_pv_serve_load(df_pv,df_load,install_cap,ENplot=True)
     
     sys.stdout = original_stdout       
