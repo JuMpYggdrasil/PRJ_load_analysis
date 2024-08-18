@@ -3,12 +3,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import json
-from deap import base, creator, tools, algorithms
+# from deap import base, creator, tools, algorithms
 
-# PV_Install_Capacity = [0.0000001,150,200] # kW
+# Online section for weather database TMY
+from PVGIS_TMY import PVGIS_TMY
+latitude, longitude = 13.811739286586437, 100.50565968620579
+
+
 PV_Install_Capacity = [8000] # kW1350
-PVSyst_Energy_per_year_per_kWp = [1580] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
-PVSyst_GlobInc = 2045.3 # (PVSyst: GlobInc kWh/m2/year)
+## -- Offline
+PVSyst_GlobInc = 2045.3 # (PVSyst: GlobInc kWh/m2/year) 
+PVSyst_Energy_per_year_per_kWp = [1441.9] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+# ## -- Online (roughly)
+# PVSyst_GlobInc, PVSyst_Energy_per_year_per_kWp = PVGIS_TMY(latitude, longitude) # -- Online
+
+
 
 # ## >69 kV
 # unit_price_on_peak = 4.1025
@@ -336,94 +345,94 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
 
     
 
-    # # Invert the filter to get dates where pv_curtailed sum is not greater than 1
-    # load_existing_charge_kWh_df_1 = load_existing_charge_kWh_df[~load_existing_charge_kWh_df.index.isin(pv_curtailed_filtered_dates)]
-    # load_existing_charge_kWh_df_2 = load_existing_charge_kWh_df[extra_condition_mask]
+    # Invert the filter to get dates where pv_curtailed sum is not greater than 1
+    load_existing_charge_kWh_df_1 = load_existing_charge_kWh_df[~load_existing_charge_kWh_df.index.isin(pv_curtailed_filtered_dates)]
+    load_existing_charge_kWh_df_2 = load_existing_charge_kWh_df[extra_condition_mask]
 
-    # # Combine load_existing_charge_kWh_df_1 and load_existing_charge_kWh_df_2
-    # load_existing_charge_kWh_df = pd.concat([load_existing_charge_kWh_df_1, load_existing_charge_kWh_df_2]).sort_index()
+    # Combine load_existing_charge_kWh_df_1 and load_existing_charge_kWh_df_2
+    load_existing_charge_kWh_df = pd.concat([load_existing_charge_kWh_df_1, load_existing_charge_kWh_df_2]).sort_index()
 
-    # count_curtailed_day = pv_curtailed_kWh_df.index.nunique()
-    # count_arbitrage_day = load_existing_charge_kWh_df_1.index.nunique()
-    # count_double_cycle_day = load_existing_charge_kWh_df_2.index.nunique()
+    count_curtailed_day = pv_curtailed_kWh_df.index.nunique()
+    count_arbitrage_day = load_existing_charge_kWh_df_1.index.nunique()
+    count_double_cycle_day = load_existing_charge_kWh_df_2.index.nunique()
 
-    # # Print the count
-    # print(f"Number of dates can do Double Cycles: {count_double_cycle_day} days")
-    # print(f"Number of count_curtailed_day       : {count_curtailed_day} days")
-    # print(f"Number of count_arbitrage_day       : {count_arbitrage_day} days")
-    # print(f"                                365 ? {(count_curtailed_day+count_arbitrage_day)}")
+    # Print the count
+    print(f"Number of dates can do Double Cycles: {count_double_cycle_day} days")
+    print(f"Number of count_curtailed_day       : {count_curtailed_day} days")
+    print(f"Number of count_arbitrage_day       : {count_arbitrage_day} days")
+    print(f"                                365 ? {(count_curtailed_day+count_arbitrage_day)}")
 
 
 
-    # count_both_case_day = count_double_cycle_day + count_curtailed_day + count_arbitrage_day
-    # print(f"Cycle/year {count_both_case_day} cycles")
-    # print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
-    # print(f"6000 Cycle = {(6000/count_both_case_day):,.1f} year")
-    # print(f"8000 Cycle = {(8000/count_both_case_day):,.1f} year")
+    count_both_case_day = count_double_cycle_day + count_curtailed_day + count_arbitrage_day
+    print(f"Cycle/year {count_both_case_day} cycles")
+    print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
+    print(f"6000 Cycle = {(6000/count_both_case_day):,.1f} year")
+    print(f"8000 Cycle = {(8000/count_both_case_day):,.1f} year")
 
-    # # Calculate the 40th percentile -> mean almost use full capacity
-    # percentile_40_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.40)
-    # percentile_60_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.60)
-    # percentile_80_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.80)
-    # print(f"max battery from PV curtailed: {max_pv_curtailed_kWh:,.2f} kWh")
-    # print(f"  -- suggest Battery Capacity: {percentile_60_pv_curtailed_kWh:,.0f} kWh\n\r")
+    # Calculate the 40th percentile -> mean almost use full capacity
+    percentile_40_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.40)
+    percentile_60_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.60)
+    percentile_80_pv_curtailed_kWh = pv_curtailed_kWh_df.quantile(0.80)
+    print(f"max battery from PV curtailed: {max_pv_curtailed_kWh:,.2f} kWh")
+    print(f"  -- suggest Battery Capacity: {percentile_60_pv_curtailed_kWh:,.0f} kWh\n\r")
 
     
 
-    # if ENplot:
-    #     # Create a plot
-    #     plt.figure(figsize=(10, 6))
+    if ENplot:
+        # Create a plot
+        plt.figure(figsize=(10, 6))
 
-    #     # Plotting the data
-    #     plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
+        # Plotting the data
+        plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
 
-    #     # Adding a horizontal line for the 40th percentile
-    #     plt.axhline(y=percentile_80_pv_curtailed_kWh, color='lime', linestyle='--', label=f'80th Percentile ({percentile_80_pv_curtailed_kWh})')
-    #     plt.axhline(y=percentile_60_pv_curtailed_kWh, color='g', linestyle='-', label=f'60th Percentile ({percentile_60_pv_curtailed_kWh})')
-    #     plt.axhline(y=percentile_40_pv_curtailed_kWh, color='lightgreen', linestyle='--', label=f'40th Percentile ({percentile_40_pv_curtailed_kWh})')
+        # Adding a horizontal line for the 40th percentile
+        plt.axhline(y=percentile_80_pv_curtailed_kWh, color='lime', linestyle='--', label=f'80th Percentile ({percentile_80_pv_curtailed_kWh})')
+        plt.axhline(y=percentile_60_pv_curtailed_kWh, color='g', linestyle='-', label=f'60th Percentile ({percentile_60_pv_curtailed_kWh})')
+        plt.axhline(y=percentile_40_pv_curtailed_kWh, color='lightgreen', linestyle='--', label=f'40th Percentile ({percentile_40_pv_curtailed_kWh})')
     
-    #     # Adding title and labels
-    #     plt.title(f'PV Curtailed with 60th Percentile Line ({pv_install_capacity:,.0f} kWp)')
-    #     plt.xlabel('Index')
-    #     plt.ylabel('Values')
+        # Adding title and labels
+        plt.title(f'PV Curtailed with 60th Percentile Line ({pv_install_capacity:,.0f} kWp)')
+        plt.xlabel('Index')
+        plt.ylabel('Values')
 
-    #     # Adding a legend
-    #     plt.legend()
+        # Adding a legend
+        plt.legend()
 
-    #     plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
-    #     # Show the plot
-    #     plt.show()
+        plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
+        # Show the plot
+        plt.show()
     
 
 
-    # # =============================================== #
-    # # ============= SELECT BATTERY SIZE ============= #
-    # # =============================================== #
-    # # batt_cap_selected = percentile_60_pv_curtailed_kWh
-    # battery_capacities = [500, 700, 900]  # example capacities in kWh
-    # for batt_capacity_selected in battery_capacities:
-    #     batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
+    # =============================================== #
+    # ============= SELECT BATTERY SIZE ============= #
+    # =============================================== #
+    # batt_cap_selected = percentile_60_pv_curtailed_kWh
+    battery_capacities = [500, 700, 900]  # example capacities in kWh
+    for batt_capacity_selected in battery_capacities:
+        batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
 
-    #     # arbitrage only (discharge) in case load > PV
-    #     batt_arbitrage_kWh_df = np.where(load_existing_charge_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_charge_kWh_df)
-    #     sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.7
-    #     price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
-    #     # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
+        # arbitrage only (discharge) in case load > PV
+        batt_arbitrage_kWh_df = np.where(load_existing_charge_kWh_df > batt_cap_selected, batt_cap_selected, load_existing_charge_kWh_df)
+        sum_batt_arbitrage_kWh = batt_arbitrage_kWh_df.sum() * 0.7
+        price_batt_arbitrage = sum_batt_arbitrage_kWh * (unit_price_on_peak-unit_price_off_peak)
+        # price_batt_arbitrage = batt_cap_selected*365*0.75*2 # 2 (4.1-2.1) THB/unit, arbitrage chance 75%
 
-    #     batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
-    #     sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
-    #     price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
-    #     Average_load_factor = 0.42
-    #     demand_charge_saving = (count_double_cycle_day+count_arbitrage_day)/365 * batt_cap_selected / 3 * unit_price_demand_charge * (1-Average_load_factor) # interval discharge time= 3 hours, can reduce 10 mth/yr
+        batt_store_curtailed_kWh_df = np.where(pv_curtailed_kWh_df > batt_cap_selected, batt_cap_selected, pv_curtailed_kWh_df)
+        sum_batt_store_curtailed_kWh = batt_store_curtailed_kWh_df.sum() * 0.9
+        price_batt_store_curtailed = (sum_batt_store_curtailed_kWh * unit_price_on_peak)
+        Average_load_factor = 0.42
+        demand_charge_saving = (count_double_cycle_day+count_arbitrage_day)/365 * batt_cap_selected / 3 * unit_price_demand_charge * (1-Average_load_factor) # interval discharge time= 3 hours, can reduce 10 mth/yr
         
-    #     total_price_saving_batt = price_batt_store_curtailed + price_batt_arbitrage + demand_charge_saving
-    #     print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
-    #     print(f"  -- suggest Battery Saving  : {total_price_saving_batt:,.0f} THB  ({(total_price_saving_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
-    #     print(f"         - curtailed saving  : {price_batt_store_curtailed:,.0f} THB")
-    #     print(f"         - arbitrage saving  : {price_batt_arbitrage:,.0f} THB")
-    #     print(f"         - demand charge sav : {demand_charge_saving:,.0f} THB")
-    #     print(f"         - curtailed energy  : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
-    #     print(f"")
+        total_price_saving_batt = price_batt_store_curtailed + price_batt_arbitrage + demand_charge_saving
+        print(f"  -- installed Battery       : {batt_capacity_selected:,.0f} kWh")
+        print(f"  -- suggest Battery Saving  : {total_price_saving_batt:,.0f} THB  ({(total_price_saving_batt*10/batt_capacity_selected):,.0f} THB/kWh/10years)")
+        print(f"         - curtailed saving  : {price_batt_store_curtailed:,.0f} THB")
+        print(f"         - arbitrage saving  : {price_batt_arbitrage:,.0f} THB")
+        print(f"         - demand charge sav : {demand_charge_saving:,.0f} THB")
+        print(f"         - curtailed energy  : {sum_batt_store_curtailed_kWh:,.0f} kWh (Curtail {(sum_pv_curtailed/sum_pv_produce*100):.2f} % -> {((sum_pv_curtailed-sum_batt_store_curtailed_kWh)/sum_pv_produce*100):.2f} %)")
+        print(f"")
     
     
     
@@ -452,6 +461,26 @@ for install_cap in PV_Install_Capacity:
     # After exiting the 'with' block, the standard output will be reverted back to the console
 
 def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, max_iterations=100):
+    """
+    Finds the optimal PV installation capacity using a binary search method to meet a target percentage of curtailed PV energy.
+
+    Parameters:
+    df_pv (DataFrame): DataFrame containing the PV generation data.
+    df_load (DataFrame): DataFrame containing the load data.
+    target_percent (float): The target percentage of PV energy curtailment. Default is 10%.
+    tolerance (float): The acceptable tolerance around the target percentage. Default is 0.1%.
+    max_iterations (int): The maximum number of iterations for the binary search. Default is 100.
+
+    Returns:
+    float: The optimal PV installation capacity that best meets the target percentage of curtailed PV energy.
+    str: A summary string showing the percentage of PV curtailed for the best-found capacity.
+
+    The function performs a binary search between a predefined minimum (0) and maximum (100,000) PV installation capacity.
+    In each iteration, it calculates the percentage of PV energy curtailed using the `cal_pv_serve_load` function. 
+    If the calculated curtailment is within the specified tolerance of the target percentage, it returns the current capacity.
+    Otherwise, it adjusts the search range by comparing the calculated curtailment to the target.
+    If the maximum number of iterations is reached, the function returns the best-found capacity and its corresponding curtailment.
+    """
     low = 0  # Minimum possible pv_install_capacity
     high = 100000  # Set a reasonable high boundary based on your data context
     iterations = 0
