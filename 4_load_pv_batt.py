@@ -10,30 +10,30 @@ from PVGIS_TMY import PVGIS_TMY
 latitude, longitude = 13.811739286586437, 100.50565968620579
 
 
-PV_Install_Capacity = [8000] # kW1350
+PV_Install_Capacity = [150000] # kW1350
 ## -- Offline
 PVSyst_GlobInc = 2045.3 # (PVSyst: GlobInc kWh/m2/year) 
-PVSyst_Energy_per_year_per_kWp = [1441.9] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_Energy_per_year_per_kWp = [1580] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
 # ## -- Online (roughly)
 # PVSyst_GlobInc, PVSyst_Energy_per_year_per_kWp = PVGIS_TMY(latitude, longitude) # -- Online
 
 
 
-# ## >69 kV
-# unit_price_on_peak = 4.1025
-# unit_price_off_peak = 2.5849
-# # unit_price_holiday = unit_price_off_peak
-# unit_price_demand_charge = 74.14
-# unit_price_service_charge = 312.24
-# # *** ignore FT 5-10% and vat 7%
-
-## 22-33 kV
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 
 # PV_Energy_Adjust_Factor_1_6 = PVSyst_Energy_per_year_per_kWp/737.41945*737.41945
@@ -410,7 +410,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
         # ============= SELECT BATTERY SIZE ============= #
         # =============================================== #
         # batt_cap_selected = percentile_60_pv_curtailed_kWh
-        battery_capacities = [500, 700, 900]  # example capacities in kWh
+        battery_capacities = [400000,450000,500000,]  # example capacities in kWh
         for batt_capacity_selected in battery_capacities:
             batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
 

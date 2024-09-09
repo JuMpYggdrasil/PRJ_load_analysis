@@ -24,10 +24,10 @@ Total Energy: 188,306,480.00 kWh
 Sum of all Data: 188,306,480.00 kWh
 Sum of demand_charge: 324,560.00 kW
 
-price_on_peak: 303,744,278.40 THB
-price_off_peak: 301,269,232.04 THB
-price_demand_charge: 43,143,760.80 THB
-Total Electricity Base Price: 648,161,018.13 THB
+price_on_peak: 297,834,771.90 THB
+price_off_peak: 299,093,919.39 THB
+price_demand_charge: 24,062,878.40 THB
+Total Electricity Base Price: 620,995,316.57 THB
 	ignore FT & vat
 
 On-peak days: 140.8

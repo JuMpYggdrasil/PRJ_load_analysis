@@ -1,0 +1,50 @@
+
+PV Install_cap: 100,000.00 kW
+Energy of pv_produce: 158,000,000.00 kWh/year (Verify with PVSyst)
+  Monthly average PV energy production (kWh/month): 18,853,20,797,20,953,20,152,18,272,15,780,15,935,15,214,16,756,16,207,18,361,19,391
+Energy of pv_produce: 1,580.00 kWh/kWp/year
+Energy of pv_produce: 4.33 kWh/kWp/day
+Capacity Factor: 18.04 %
+Energy of pv_curtailed: 84,483,722.71 kWh  (53.47 %)
+Energy of pv_serve_load: 73,516,277.29 kWh
+PR ratio (PV): 0.77
+PR ratio (Load): 0.36
+  pv_serve_load -- On Peak: 44,215,791.05 kWh
+  pv_serve_load -- Off Peak: 8,236,164.38 kWh
+  pv_serve_load -- holiday: 21,064,321.86 kWh
+  CO2 Emission Reduction: 35,706,856 kg-CO2
+Total Base Price: 281,108,801.34 THB
+	ignore FT & vat
+
+Number of dates can do Double Cycles: 30 days
+Number of count_curtailed_day       : 363 days
+Number of count_arbitrage_day       : 2 days
+                                365 ? 365
+Cycle/year 395 cycles
+5000 Cycle = 12.7 year
+6000 Cycle = 15.2 year
+8000 Cycle = 20.3 year
+max battery from PV curtailed: 471,793.79 kWh
+  -- suggest Battery Capacity: 264,515 kWh
+
+  -- installed Battery       : 500 kWh
+  -- suggest Battery Saving  : 495,789 THB  (9,916 THB/kWh/10years)
+         - curtailed saving  : 483,064 THB
+         - arbitrage saving  : 12,272 THB
+         - demand charge sav : 454 THB
+         - curtailed energy  : 117,749 kWh (Curtail 53.47 % -> 53.40 %)
+
+  -- installed Battery       : 700 kWh
+  -- suggest Battery Saving  : 693,884 THB  (9,913 THB/kWh/10years)
+         - curtailed saving  : 676,068 THB
+         - arbitrage saving  : 17,181 THB
+         - demand charge sav : 635 THB
+         - curtailed energy  : 164,794 kWh (Curtail 53.47 % -> 53.37 %)
+
+  -- installed Battery       : 900 kWh
+  -- suggest Battery Saving  : 891,978 THB  (9,911 THB/kWh/10years)
+         - curtailed saving  : 869,072 THB
+         - arbitrage saving  : 22,089 THB
+         - demand charge sav : 817 THB
+         - curtailed energy  : 211,840 kWh (Curtail 53.47 % -> 53.34 %)
+

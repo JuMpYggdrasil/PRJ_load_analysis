@@ -4,21 +4,21 @@ import os
 import numpy as np
 import json
 
-# ## >69 kV
-# unit_price_on_peak = 4.1025
-# unit_price_off_peak = 2.5849
-# # unit_price_holiday = unit_price_off_peak
-# unit_price_demand_charge = 74.14
-# unit_price_service_charge = 312.24
-# # *** ignore FT 5-10% and vat 7%
-
-## 22-33 kV
-unit_price_on_peak = 4.1839
-unit_price_off_peak = 2.6037
+## >69 kV
+unit_price_on_peak = 4.1025
+unit_price_off_peak = 2.5849
 # unit_price_holiday = unit_price_off_peak
-unit_price_demand_charge = 132.93
+unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## 22-33 kV
+# unit_price_on_peak = 4.1839
+# unit_price_off_peak = 2.6037
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 132.93
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 # Load your electrical load data into a Pandas DataFrame
 df = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
