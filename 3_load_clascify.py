@@ -5,12 +5,20 @@ import numpy as np
 import json
 
 ## >69 kV
-unit_price_on_peak = 4.1025
-unit_price_off_peak = 2.5849
+unit_price_on_peak = 5.5
+unit_price_off_peak = 5.5
 # unit_price_holiday = unit_price_off_peak
 unit_price_demand_charge = 74.14
 unit_price_service_charge = 312.24
 # *** ignore FT 5-10% and vat 7%
+
+# ## >69 kV
+# unit_price_on_peak = 4.1025
+# unit_price_off_peak = 2.5849
+# # unit_price_holiday = unit_price_off_peak
+# unit_price_demand_charge = 74.14
+# unit_price_service_charge = 312.24
+# # *** ignore FT 5-10% and vat 7%
 
 # ## 22-33 kV
 # unit_price_on_peak = 4.1839
