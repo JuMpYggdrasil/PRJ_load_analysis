@@ -1,0 +1,50 @@
+
+PV Install_cap: 500.00 kW
+Energy of pv_produce: 727,682.57 kWh/year (Verify with PVSyst)
+  Monthly average PV energy production (kWh/month): 87,96,96,93,83,72,73,70,78,74,85,88
+Energy of pv_produce: 1,455.37 kWh/kWp/year
+Energy of pv_produce: 3.99 kWh/kWp/day
+Capacity Factor: 16.61 %
+Energy of pv_curtailed: 572,755.57 kWh  (78.71 %)
+Energy of pv_serve_load: 154,927.01 kWh
+PR ratio (PV): 0.86
+PR ratio (Load): 0.18
+  pv_serve_load -- On Peak: 95,543.21 kWh
+  pv_serve_load -- Off Peak: 12,204.89 kWh
+  pv_serve_load -- holiday: 47,178.91 kWh
+  CO2 Emission Reduction: 75,248 kg-CO2
+Total Base Price: 1,148,131.36 THB
+	ignore FT & vat
+
+Number of dates can do Double Cycles: 0 days
+Number of count_curtailed_day       : 290 days
+Number of count_arbitrage_day       : 76 days
+                                365 ? 366
+Cycle/year 366 cycles
+5000 Cycle = 13.7 year
+6000 Cycle = 16.4 year
+8000 Cycle = 21.9 year
+max battery from PV curtailed: 2,760.11 kWh
+  -- suggest Battery Capacity: 2,170 kWh
+
+  -- installed Battery       : 400,000 kWh
+  -- suggest Battery Saving  : 3,697,080 THB  (92 THB/kWh/10years)
+         - curtailed saving  : 2,835,140 THB
+         - arbitrage saving  : 0 THB
+         - demand charge sav : 861,940 THB
+         - curtailed energy  : 515,480 kWh (Curtail 78.71 % -> 7.87 %)
+
+  -- installed Battery       : 450,000 kWh
+  -- suggest Battery Saving  : 3,804,823 THB  (85 THB/kWh/10years)
+         - curtailed saving  : 2,835,140 THB
+         - arbitrage saving  : 0 THB
+         - demand charge sav : 969,683 THB
+         - curtailed energy  : 515,480 kWh (Curtail 78.71 % -> 7.87 %)
+
+  -- installed Battery       : 500,000 kWh
+  -- suggest Battery Saving  : 3,912,566 THB  (78 THB/kWh/10years)
+         - curtailed saving  : 2,835,140 THB
+         - arbitrage saving  : 0 THB
+         - demand charge sav : 1,077,426 THB
+         - curtailed energy  : 515,480 kWh (Curtail 78.71 % -> 7.87 %)
+

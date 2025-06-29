@@ -10,10 +10,10 @@ from PVGIS_TMY import PVGIS_TMY
 latitude, longitude = 13.811739286586437, 100.50565968620579
 
 
-PV_Install_Capacity = [500] # kW
+PV_Install_Capacity = [500,1000] # kW
 ## -- Offline
 PVSyst_GlobInc = 1699.9 # (PVSyst: GlobInc kWh/m2/year)
-PVSyst_Energy_per_year_per_kWp = [1452] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_Energy_per_year_per_kWp = [1452,1452] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
 # ## -- Online (roughly)
 # PVSyst_GlobInc, PVSyst_Energy_per_year_per_kWp = PVGIS_TMY(latitude, longitude) # -- Online
 

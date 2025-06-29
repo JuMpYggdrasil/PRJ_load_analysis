@@ -1,0 +1,20 @@
+
+Assumption:
+Tariff Rate Average (with VAT): 5.14019 THB/units
+
+Inputs Configuration:
+Project Time (Years): 25 years
+Cost per kW: 22513.157894736843 THB/kW
+Margin: 10 %
+Sale Price per kW: 24764.47 THB/kW
+Solar Degradation First Year: 2 %
+Solar Degradation After First Year: 0.55 %
+Inverter Replacement Cost: 4200 THB/kW
+O&M Percentage: 2 %
+O&M Escalation Rate: 0 %
+O&M Starts at Year: 5
+
+EGAT Operation Cost:
+General Work Cost: 468538 THB
+Distance from EGAT HQ: 0 km
+EGAT Operation Cost: 468538 THB
