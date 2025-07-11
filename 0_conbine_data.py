@@ -10,12 +10,20 @@ from tkinter import filedialog
 
 output_file_name = r'combined_data.csv'
 
-## PEA AMR format setting
-skiprows_count = 5 #DEFAULT 5, 8
-peak_string = "RATE A"
-off_peak_string = "RATE B"
-holiday_string = "RATE C"
+## PEA webpage TAWASINPHUKET
+# note : remove "เวลา" และ ข้อมูลตัวอักษรท้ายตาราง
+skiprows_count = 27 #DEFAULT 5, 8
+peak_string = "Rate A"
+off_peak_string = "Rate B"
+holiday_string = "Rate C"
 header_column_index = [0, 1, 3, 5]
+
+# ## PEA AMR format setting
+# skiprows_count = 5 #DEFAULT 5, 8
+# peak_string = "RATE A"
+# off_peak_string = "RATE B"
+# holiday_string = "RATE C"
+# header_column_index = [0, 1, 3, 5]
 
 # ## Robinson AMR format setting
 # skiprows_count = 1 #DEFAULT 5
@@ -53,7 +61,7 @@ timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
 timestamp_format_standard = '%d/%m/%Y %H.%M'
 timestamp_format_homer = '%d.%m.%Y %H:%M'
 
-def dumb_AMR_format_to_datetime(date_str):
+def dumb_AMR_format_to_datetime_old(date_str):
     try:
         date_str = date_str.strip()
         if date_str[11:13] != '24':
@@ -63,6 +71,27 @@ def dumb_AMR_format_to_datetime(date_str):
             date_obj = pd.to_datetime(date_str, format=timestamp_format_AMR) + timedelta(days=1) - timedelta(minutes=15)
         return date_obj.strftime(timestamp_format_standard)
     except ValueError:
+        return None
+    
+def dumb_AMR_format_to_datetime(date_str):
+    try:
+        date_str = date_str.strip()
+        # Extract year and convert BE to AD
+        parts = date_str.split(' ')
+        date_part = parts[0]
+        time_part = parts[1]
+        d, m, y = date_part.split('/')
+        if int(y) > 2500:  # BE year
+            y = str(int(y) - 543)
+        date_str_gregorian = f"{d}/{m}/{y} {time_part}"
+        if date_str_gregorian[11:13] != '24':
+            date_obj = pd.to_datetime(date_str_gregorian, format=timestamp_format_AMR) - timedelta(minutes=15)
+        else:
+            date_str_gregorian = date_str_gregorian[0:11] + '00' + date_str_gregorian[13:]
+            date_obj = pd.to_datetime(date_str_gregorian, format=timestamp_format_AMR) + timedelta(days=1) - timedelta(minutes=15)
+        return date_obj.strftime(timestamp_format_standard)
+    except Exception as e:
+        print(f"Date parse error: {date_str} ({e})")
         return None
 
 def clean_dataframe(df, datetime_col=0):
