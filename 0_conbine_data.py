@@ -5,6 +5,7 @@ import openpyxl
 import xlrd,xlwt
 import tkinter as tk
 from tkinter import filedialog
+import re
 
 # create 1 year data (.csv) from 12 excel (.xlsx) files
 
@@ -61,6 +62,20 @@ timestamp_format_AMR = '%d/%m/%Y %H.%M' # PEA
 timestamp_format_standard = '%d/%m/%Y %H.%M'
 timestamp_format_homer = '%d.%m.%Y %H:%M'
 
+# def find_first_last_date_idx(df, datetime_col=0):
+#     """
+#     Returns the index of the first and last row where the first column matches DD/MM/YYYY.
+#     """
+#     date_regex = re.compile(r'^\d{2}/\d{2}/\d{4}')
+#     first_idx = None
+#     last_idx = None
+#     for idx, val in df.iloc[:, datetime_col].items():
+#         if isinstance(val, str) and date_regex.match(val.strip()):
+#             if first_idx is None:
+#                 first_idx = idx
+#             last_idx = idx
+#     return first_idx, last_idx
+
 def dumb_AMR_format_to_datetime_old(date_str):
     try:
         date_str = date_str.strip()
@@ -100,9 +115,9 @@ def clean_dataframe(df, datetime_col=0):
         datetime_value = dumb_AMR_format_to_datetime(str(row.iat[datetime_col]))
         if datetime_value:
             df_cleaned.at[index, df.columns[datetime_col]] = datetime_value
-        else:
-            # Skip or remove the row, depending on your requirement
-            df_cleaned.drop(index, inplace=True)
+        # else:
+        #     # Skip or remove the row, depending on your requirement
+        #     df_cleaned.drop(index, inplace=True)
     return df_cleaned
 
 # Define a function to reformat the date
@@ -171,7 +186,17 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
             
             # Attempt to read the Excel file
             # Now read the unmerged Excel file into a Pandas DataFrame
+            df = pd.read_excel(temp_file_path)
+            # first_idx, last_idx = find_first_last_date_idx(df)
+            # print(f"First index: {first_idx}, Last index: {last_idx}")
+            # if first_idx > 0 and last_idx is not None and last_idx > first_idx:
+            #     df = pd.read_excel(temp_file_path, header=0, skiprows=first_idx)
+            # else:
+            #     df = pd.read_excel(temp_file_path, header=0, skiprows=skiprows_count)
             df = pd.read_excel(temp_file_path, header=0, skiprows=skiprows_count)
+            # df = pd.read_excel(temp_file_path)
+            # print("File read successfully.")
+
             os.remove(temp_file_path)  # Clean up the temporary file
 
             
@@ -196,7 +221,7 @@ def combine_xlsx_data(excel_files_dir,output_files_dir):
     if all_dataframes:
         # Concatenate all dataframes
         combined_data = pd.concat(all_dataframes, ignore_index=True)
-        combined_data.rename(columns={'Unnamed: 0': 'Date','ผลรวม': 'Load'}, inplace=True)
+        combined_data.rename(columns={'เวลา':'Date','Unnamed: 0': 'Date','ผลรวม': 'Load'}, inplace=True)
         # Sort by 'Date' : Date is in text format -> not good to sort if it's string(not object)
         
 
