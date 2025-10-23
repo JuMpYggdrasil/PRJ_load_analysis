@@ -82,7 +82,8 @@ def load_and_process_data(file_path):
         return
 
     # Aggregate data to hourly intervals
-    hourly_data = data.resample('H').mean()
+    # use lowercase 'h' to avoid FutureWarning
+    hourly_data = data.resample('h').mean()
 
     # Optionally, add additional features like day of the week
     hourly_data['day_of_week'] = hourly_data.index.dayofweek
@@ -122,7 +123,12 @@ def load_and_process_data(file_path):
     for hour in range(24):
         average_pattern.append(hourly_data['load'][hourly_data.index.hour == hour].mean())
 
-    print(average_pattern.index)
+    # print the list or call index(...) with a value you want to find.
+    # Example: print the list contents
+    print(average_pattern)
+    # Or, if you intended to print the position of a value 'val' in the list:
+    # print(some_list.index(val))
+
     # Plot the max_load_day_data and average_pattern
     plt.figure(figsize=(12, 6))
     plt.plot(max_peak_day_data.index.hour, max_peak_day_data['load'], marker='o', linestyle='-', color='blue', label=f'Max Load ({max_peak_day})')
@@ -152,7 +158,8 @@ def load_and_process_data(file_path):
     # print(f'Total cost during peak hours: ${total_cost_peak:.2f}')
 
     # Aggregate data to hourly intervals
-    montly_peak_data = data.resample('M').max()
+    # use 'ME' (month end) to avoid FutureWarning
+    montly_peak_data = data.resample('ME').max()
 
     # Save the prepared data to a CSV file
     montly_peak_data.to_csv('montly_peak_load_data.csv')
@@ -161,4 +168,3 @@ if __name__ == '__main__':
     # file_path = 'combined_data.csv'
     file_path = 'source\iwrm\EnergyDayChartAll2022_edit.csv'
     load_and_process_data(file_path)
-    

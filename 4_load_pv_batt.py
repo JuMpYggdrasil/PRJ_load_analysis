@@ -10,10 +10,10 @@ from PVGIS_TMY import PVGIS_TMY
 latitude, longitude = 13.811739286586437, 100.50565968620579
 
 
-PV_Install_Capacity = [500,1000] # kW
+PV_Install_Capacity = [1000,4000] # kW
 ## -- Offline
 PVSyst_GlobInc = 1699.9 # (PVSyst: GlobInc kWh/m2/year)
-PVSyst_Energy_per_year_per_kWp = [1452,1452] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
+PVSyst_Energy_per_year_per_kWp = [1452,1600] # (PVSyst kWh/year/kWp) or https://globalsolaratlas.info/ tracking +20%
 # ## -- Online (roughly)
 # PVSyst_GlobInc, PVSyst_Energy_per_year_per_kWp = PVGIS_TMY(latitude, longitude) # -- Online
 
@@ -228,6 +228,17 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
         
     # Create a list of hours (0 to 23) for the x-axis
     hours = list(range(24))
+    
+    # Save hourly average load & PV profiles to CSV
+    avg_df = pd.DataFrame({
+        'hour': hours,
+        'average_load_kW': pd.Series(average_load_patterns, dtype=float),
+        'average_pv_kW': pd.Series(average_pv_patterns, dtype=float)
+    })
+    avg_df.to_csv(f"result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv", index=False)
+    print(f"Saved hourly averages -> result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv")
+
+    
 
     if ENplot:
         # Plot the hourly data for weekdays and weekends
@@ -417,7 +428,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
         # ============= SELECT BATTERY SIZE ============= #
         # =============================================== #
         # batt_cap_selected = percentile_60_pv_curtailed_kWh
-        battery_capacities = [400000,450000,500000,]  # example capacities in kWh
+        battery_capacities = [500000,]  # example capacities in kWh
         for batt_capacity_selected in battery_capacities:
             batt_cap_selected = batt_capacity_selected * 0.8 * 0.95 *0.95 # batt depth 80%, performance 95%
 

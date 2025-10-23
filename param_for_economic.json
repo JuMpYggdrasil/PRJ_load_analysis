@@ -1,2 +1,2 @@
-{"installed_capacity": 500, "capacity_factor": 16.6137573984023, "energy_of_pv_produce": 727682.5740500207, "energy_of_pv_serve_load": 154927.00730946183}
-{"installed_capacity": 1000, "capacity_factor": 16.6137573984023, "energy_of_pv_produce": 1455365.1481000413, "energy_of_pv_serve_load": 298554.98295584036}
+{"installed_capacity": 1000, "capacity_factor": 16.6137573984023, "energy_of_pv_produce": 1455365.1481000413, "energy_of_pv_serve_load": 1144072.6163940085}
+{"installed_capacity": 4000, "capacity_factor": 18.30717068694468, "energy_of_pv_produce": 6414832.608705415, "energy_of_pv_serve_load": 3658272.073350212}

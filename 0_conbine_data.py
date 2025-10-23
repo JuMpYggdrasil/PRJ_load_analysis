@@ -11,20 +11,20 @@ import re
 
 output_file_name = r'combined_data.csv'
 
-## PEA webpage TAWASINPHUKET
-# note : remove "เวลา" และ ข้อมูลตัวอักษรท้ายตาราง
-skiprows_count = 27 #DEFAULT 5, 8
-peak_string = "Rate A"
-off_peak_string = "Rate B"
-holiday_string = "Rate C"
-header_column_index = [0, 1, 3, 5]
-
-# ## PEA AMR format setting
-# skiprows_count = 5 #DEFAULT 5, 8
-# peak_string = "RATE A"
-# off_peak_string = "RATE B"
-# holiday_string = "RATE C"
+# ## PEA webpage TAWASINPHUKET
+# # note : remove "เวลา" และ ข้อมูลตัวอักษรท้ายตาราง
+# skiprows_count = 27 #DEFAULT 5, 8
+# peak_string = "Rate A"
+# off_peak_string = "Rate B"
+# holiday_string = "Rate C"
 # header_column_index = [0, 1, 3, 5]
+
+## PEA AMR format setting
+skiprows_count = 5 #DEFAULT 5, 8
+peak_string = "RATE A"
+off_peak_string = "RATE B"
+holiday_string = "RATE C"
+header_column_index = [0, 1, 3, 5]
 
 # ## Robinson AMR format setting
 # skiprows_count = 1 #DEFAULT 5
@@ -109,7 +109,7 @@ def dumb_AMR_format_to_datetime(date_str):
         print(f"Date parse error: {date_str} ({e})")
         return None
 
-def clean_dataframe(df, datetime_col=0):
+def clean_dataframe_old(df, datetime_col=0):
     df_cleaned = df.copy()
     for index, row in df.iterrows():
         datetime_value = dumb_AMR_format_to_datetime(str(row.iat[datetime_col]))
@@ -120,6 +120,26 @@ def clean_dataframe(df, datetime_col=0):
         #     df_cleaned.drop(index, inplace=True)
     return df_cleaned
 
+def clean_dataframe(df, datetime_col=0):
+    """
+    Parse the datetime in the specified column using dumb_AMR_format_to_datetime.
+    Rows that can't be parsed are dropped.
+    Returns a new dataframe with parsed datetimes (as strings using timestamp_format_standard).
+    """
+    parsed_rows = []
+    for _, row in df.iterrows():
+        datetime_value = dumb_AMR_format_to_datetime(str(row.iat[datetime_col]))
+        if datetime_value:
+            row_copy = row.copy()
+            row_copy.iat[datetime_col] = datetime_value
+            parsed_rows.append(row_copy)
+        # if datetime_value is None -> skip the row (drop)
+    if parsed_rows:
+        return pd.DataFrame(parsed_rows, columns=df.columns)
+    else:
+        # return empty dataframe with same columns if nothing parsed
+        return pd.DataFrame(columns=df.columns)
+    
 # Define a function to reformat the date
 def reformat_date(date):
     return date.strftime("{d:d}.{m:d}.%Y %H:%M").format(m=date.month, d=date.day)
