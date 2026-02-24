@@ -1,0 +1,7 @@
+{
+  "project_name": "Solar Rooftop โรงงาน A",
+  "pv_capacity": 500,
+  "annual_energy": 720000,
+  "irr": 14.2,
+  "payback": 6.8
+}
