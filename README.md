@@ -326,6 +326,8 @@ timestamp,pv
 
 The `pv` column represents hourly PV output per installed kWp. The existing profile for 2022 is used by default.
 
+Profiles such as `temporary/solar_compare/nasa_2022_normalized.csv` are reference profiles at 1 kWp, not at a specific installed capacity. Their annual yield is normalized to `1,402.8119 kWh/kWp/year`; installed capacity is applied later when PV production is calculated. For example, `1,000` and `4,000 kWp` are multipliers used in the PV analysis, not properties of the normalized profile file.
+
 ### Legacy TMY data
 
 `tmy_data.csv` is the PVGIS TMY output. It is not required for the current default run.
@@ -383,6 +385,61 @@ The battery heuristic suggests approximately `2,618 kWh` at `1,000 kWp` and `17,
 
 Example outputs are snapshots and will change when inputs or assumptions change.
 
+## Solar Profile Comparison: Local vs NASA POWER 2022
+
+A standalone comparison was run to check whether the local PV profile is interchangeable with an online NASA POWER profile for 2022. The experiment did not modify `result_2022/` or the main pipeline.
+
+Method:
+
+- Fetch NASA POWER 2022 at the project coordinates.
+- Build a PV profile with the same PVWatts model and assumptions as `solar_profile.py`.
+- Normalize the NASA profile to the local annual yield of `1,402.8119 kWh/kWp/year`.
+- Compare profile shape and PV metrics against `solar_1kW_2022.csv`.
+
+The NASA profile is a 1 kWp reference profile. It is not calculated at `1,000` or `4,000 kWp`; those capacities are applied only in the PV metrics calculation.
+
+Annual yield before normalization:
+
+| Profile | Annual yield |
+| --- | --- |
+| Local `solar_1kW_2022.csv` | `1,402.8119 kWh/kWp/year` |
+| NASA POWER 2022 raw | `1,523.1679 kWh/kWp/year` |
+| NASA POWER 2022 normalized | `1,402.8119 kWh/kWp/year` |
+
+Profile shape metrics for NASA normalized vs local:
+
+| Metric | Value |
+| --- | --- |
+| All-hours hourly correlation | `0.8956` |
+| Daytime hourly correlation | `0.7621` |
+| Daytime hourly correlation (> `0.1 kW/kWp`) | `0.6056` |
+| Daily correlation | `0.0619` |
+| Rolling 30-day daily correlation | `0.5617` |
+| Monthly correlation | `0.5510` |
+| Maximum monthly share difference | `1.66 pp` |
+| Peak output | local `0.7513`, NASA `0.8841 kW/kWp` |
+| Mean peak-hour shift | `0 h` |
+
+PV metrics:
+
+| Case | Local served | NASA served | Served change | Local curtailment | NASA curtailment |
+| --- | --- | --- | --- | --- | --- |
+| `1,000 kWp` | `596,747.3 kWh` | `587,657.0 kWh` | `-1.52%` | `58.90%` | `59.53%` |
+| `4,000 kWp` | `810,078.1 kWh` | `855,943.5 kWh` | `+5.66%` | `87.34%` | `86.63%` |
+| Optimal (`20%` target) | `268,207.5 kWh` | `215,815.5 kWh` | `-19.53%` | `20.01%` | `20.10%` |
+
+The optimal capacities are `219.73 kWp` for the local profile and `177.00 kWp` for the normalized NASA profile, a change of `-19.44%`.
+
+Interpretation:
+
+- Annual and monthly energy are similar, but the daily pattern is not: daily correlation is only `0.0619`.
+- All-hours correlation (`0.8956`) is inflated by matching nighttime zeros; daytime correlation (`0.7621`) is the more meaningful profile metric.
+- The optimal PV capacity changes from `219.73` to `177.00 kWp` (`-19.44%`), so the profiles are not interchangeable for sizing.
+- The comparison is classified as **different** using the project thresholds (close: daytime correlation >= `0.95`, monthly share difference <= `5 pp`, optimal capacity difference <= `5%`).
+- The local `solar_1kW_2022.csv` and `solar_1kW_2023.csv` files have identical `pv` arrays. The local profile therefore behaves like a reference/typical-year profile rather than independent observed-2022 data.
+
+Experiment artifacts are written to the ignored directory `temporary/solar_compare/` and are not committed.
+
 ## Known Limitations
 
 - `1_data_cleansing_aggregate.py` hardcodes the input path as `source/iwrm/EnergyDayChartAll2022_edit.csv`.
@@ -391,6 +448,8 @@ Example outputs are snapshots and will change when inputs or assumptions change.
 - Step 4 uses a fixed set of preset capacities: `1,000` and `4,000 kWp`.
 - PV correction factors are calibrated from two capacity points. Other capacities use the mean factor, not interpolation.
 - Solar fallback is fixed-tilt only. Tracking profiles must already exist as files.
+- `solar_1kW_2022.csv` and `solar_1kW_2023.csv` have identical `pv` arrays; the local profile is a reference/typical-year profile, not independent observed-2022 data.
+- The NASA POWER 2022 comparison shows similar annual/monthly yield but weak daily correlation (`0.0619`) and a `-19.44%` difference in optimal capacity, so NASA 2022 is not a drop-in replacement for the local profile at daily resolution.
 - The battery recommendation is a heuristic based on the 60th percentile of daily curtailed energy.
 - Battery economics are calculated with a hardcoded `500,000 kWh` battery, not with the recommended percentile size.
 - The `Total Base Price` printed by step 4 is computed from PV-served energy and demand values. It is an indicative PV value calculation, not the full remaining electricity bill after PV installation.
