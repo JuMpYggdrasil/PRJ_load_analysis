@@ -3,12 +3,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import json
+from pathlib import Path
 # from deap import base, creator, tools, algorithms
+
+TEMPORARY_DIR = Path("temporary")
+TEMPORARY_DIR.mkdir(exist_ok=True)
 
 # Online section for weather database TMY
 from PVGIS_TMY import PVGIS_TMY
+from solar_profile import get_solar_profile
 latitude, longitude = 13.811739286586437, 100.50565968620579
 
+PV_TILT_DEG = 15
+PV_AZIMUTH_DEG = 180
+FORCE_SOLAR_FALLBACK = False
 
 PV_Install_Capacity = [1000,4000] # kW
 ## -- Offline
@@ -50,7 +58,7 @@ print(PV_Energy_Adjust_Factor)
 
 kg_CO2_per_kWh = 0.4857
 
-df_load = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
+df_load = pd.read_csv(TEMPORARY_DIR / 'analyse_electric_load_data.csv', parse_dates=['timestamp'])
 df_load.set_index('timestamp', inplace=True)
 
 
@@ -66,10 +74,18 @@ if not os.path.exists(folder_name):
 
 
 # === tracking or fixed === #
-df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
+df_pv = get_solar_profile(
+    year_of_first_row,
+    latitude,
+    longitude,
+    tilt=PV_TILT_DEG,
+    azimuth=PV_AZIMUTH_DEG,
+    tracking=False,
+    force_fallback=FORCE_SOLAR_FALLBACK,
+)
+print(f"Solar profile source: {df_pv.attrs.get('source', 'unknown')}")
 # df_pv = pd.read_csv(f'solar_1kW_{year_of_first_row}_tracking.csv', parse_dates=['timestamp'],date_format='%d/%m/%Y %H:%M')
-
-df_pv.set_index('timestamp', inplace=True)
+# df_pv.set_index('timestamp', inplace=True)
 
 
 # Calculate hourly averages for each hour of the day
@@ -79,7 +95,7 @@ for hour in range(24):
     
 print(solar_pattern)
 df_solar_pattern = pd.DataFrame(solar_pattern)
-df_solar_pattern.to_csv("solar_pattern.csv")
+df_solar_pattern.to_csv(TEMPORARY_DIR / "solar_pattern.csv")
 
 df_pv_day = df_pv.resample('D').max()
 df_pv_data = pd.DataFrame(index=df_pv_day.index)
@@ -88,7 +104,7 @@ df_pv_data['pv_max'] = df_pv_day['pv']
 df_pv_data['pv_5']=df_pv[df_pv.index.hour == 5].resample('D').mean()['pv']
 df_pv_data['pv_6']=df_pv[df_pv.index.hour == 6].resample('D').mean()['pv']
 df_pv_data['pv_7']=df_pv[df_pv.index.hour == 7].resample('D').mean()['pv']
-df_pv_data.to_csv('pv_data_for_train_model.csv')
+df_pv_data.to_csv(TEMPORARY_DIR / 'pv_data_for_train_model.csv')
 
 
 
@@ -104,7 +120,7 @@ print(df_load.index.dtype)
 print(df_pv.index.dtype)
 
 # Specify the file path
-file_path = "param_for_economic.json"
+file_path = TEMPORARY_DIR / "param_for_economic.json"
 
 # Check if the file exists
 if os.path.exists(file_path):
@@ -129,7 +145,9 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     if l_index != -1:
         PV_Energy_Adjust_Factor_gain= PV_Energy_Adjust_Factor[l_index]
     else:
-        PV_Energy_Adjust_Factor_gain = sum(PVSyst_Energy_per_year_per_kWp)/len(PVSyst_Energy_per_year_per_kWp)
+        PV_Energy_Adjust_Factor_gain = (
+            sum(PV_Energy_Adjust_Factor) / len(PV_Energy_Adjust_Factor)
+        )
     
     df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor_gain
     df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
@@ -235,8 +253,9 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
         'average_load_kW': pd.Series(average_load_patterns, dtype=float),
         'average_pv_kW': pd.Series(average_pv_patterns, dtype=float)
     })
-    avg_df.to_csv(f"result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv", index=False)
-    print(f"Saved hourly averages -> result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv")
+    if ENplot:
+        avg_df.to_csv(f"result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv", index=False)
+        print(f"Saved hourly averages -> result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv")
 
     
 
@@ -458,7 +477,7 @@ def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
     
 
 
-    df.to_csv('load_pv_profile.csv')
+    df.to_csv(TEMPORARY_DIR / 'load_pv_profile.csv')
 
     return sum_pv_curtailed_percent,total_price
 
@@ -510,7 +529,7 @@ def find_optimal_pv_capacity(df_pv, df_load, target_percent=10, tolerance=0.1, m
         sum_pv_curtailed_percent, _ = cal_pv_serve_load(df_pv, df_load, mid)
 
         if abs(sum_pv_curtailed_percent - target_percent) <= tolerance:
-            return mid,sum_pv_curtailed_percent_txt
+            return mid, f" PV curtailed {sum_pv_curtailed_percent:,.2f}"
 
         if sum_pv_curtailed_percent < target_percent:
             low = mid

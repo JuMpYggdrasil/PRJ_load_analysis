@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import json
+from pathlib import Path
+
+TEMPORARY_DIR = Path("temporary")
+TEMPORARY_DIR.mkdir(exist_ok=True)
 
 ## roland
 unit_price_on_peak = 5.5
@@ -29,7 +33,7 @@ unit_price_service_charge = 312.24
 # # *** ignore FT 5-10% and vat 7%
 
 # Load your electrical load data into a Pandas DataFrame
-df = pd.read_csv('analyse_electric_load_data.csv', parse_dates=['timestamp'])
+df = pd.read_csv(TEMPORARY_DIR / 'analyse_electric_load_data.csv', parse_dates=['timestamp'])
 # df.rename(columns={'Date': 'timestamp','Load': 'load'}, inplace=True)
 
 # Assuming your DataFrame has a 'timestamp' column, you can set it as the index
@@ -143,7 +147,7 @@ with open(f'result_{year_of_first_row}/Energy consumption_result.txt', 'w') as f
     print("\tignore FT & vat\n\r")
     
     # Specify the file path
-    file_path = "anual_electricity_base_price.json"
+    file_path = TEMPORARY_DIR / "anual_electricity_base_price.json"
 
     # Check if the file exists
     if os.path.exists(file_path):
@@ -268,8 +272,8 @@ weekdays.reset_index(inplace=True)
 weekends.reset_index(inplace=True)
 
 # Save the DataFrames to separate CSV files
-weekdays.to_csv('weekdays_data.csv', index=False)
-weekends.to_csv('weekends_data.csv', index=False)
+weekdays.to_csv(TEMPORARY_DIR / 'weekdays_data.csv', index=False)
+weekends.to_csv(TEMPORARY_DIR / 'weekends_data.csv', index=False)
 
 # Plot the load duration curves for all 7 days of the week
 plt.figure(figsize=(12, 6))
@@ -374,4 +378,4 @@ df_load_with_pv.ffill(inplace=True)
 # Display the resulting DataFrame
 # print(df_load_with_pv)
 
-df_load_with_pv.to_csv('load_without_pv.csv', index=True)
+df_load_with_pv.to_csv(TEMPORARY_DIR / 'load_without_pv.csv', index=True)

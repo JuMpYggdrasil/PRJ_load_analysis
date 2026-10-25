@@ -2,9 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from pathlib import Path
+
+TEMPORARY_DIR = Path("temporary")
+TEMPORARY_DIR.mkdir(exist_ok=True)
 
 # Load the prepared data (hourly)
-data = pd.read_csv('prepared_electric_load_data.csv', parse_dates=['timestamp'], index_col='timestamp')
+data = pd.read_csv(TEMPORARY_DIR / 'prepared_electric_load_data.csv', parse_dates=['timestamp'], index_col='timestamp')
 
 first_row_timestamp = data.index[0]
 year_of_first_row = first_row_timestamp.year
@@ -184,7 +188,7 @@ plt.show()
 
 
 
-data.to_csv('analyse_electric_load_data.csv')
+data.to_csv(TEMPORARY_DIR / 'analyse_electric_load_data.csv')
 
 # data.
 
