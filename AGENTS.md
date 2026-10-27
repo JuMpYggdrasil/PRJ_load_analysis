@@ -22,6 +22,7 @@ PRJ_load_analysis/
 |-- 4_load_pv_batt.py
 |-- PVGIS_TMY.py          # Legacy PVGIS TMY fetcher (imported, not called)
 |-- solar_profile.py      # Standalone PV profile builder (not called by step 4)
+|-- config.json           # Step 4 solar/battery/tariff/optimizer configuration
 |-- requirements.txt
 |-- source/iwrm/          # Input load data
 |-- solar_1kW_*.csv       # Input PV profiles (root, tracked)
@@ -47,21 +48,22 @@ All intermediates go to `temporary/`. Results go to `result_<year>/` created fro
 | 1 | `source/iwrm/EnergyDayChartAll2022_edit.csv` | `temporary/dummy.csv`, `temporary/prepared_electric_load_data.csv`, `temporary/daily_peak_load_data.csv`, `temporary/montly_peak_load_data.csv`, `result_<year>/peak_day.png` |
 | 2 | `temporary/prepared_electric_load_data.csv` | `temporary/analyse_electric_load_data.csv`, EDA plots in `result_<year>/` |
 | 3 | `temporary/analyse_electric_load_data.csv` | `temporary/anual_electricity_base_price.json`, `temporary/weekdays_data.csv`, `temporary/weekends_data.csv`, `result_<year>/Energy consumption_result.txt`, TOU/LDC plots |
-| 4 | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv` | `solar_pattern.csv` (repo root), `temporary/pv_data_for_train_model.csv`, `temporary/param_for_economic.json`, `temporary/load_pv_profile.csv` (overwritten), `result_<year>/load_pv_batt_result_*.txt`, `result_<year>/average_load_pv_profile_*.csv`, PV plots |
+| 4 | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, `config.json` | `solar_pattern.csv` (repo root), `temporary/pv_data_for_train_model.csv`, `temporary/param_for_economic.json`, `temporary/load_pv_profile.csv` (overwritten), `result_<year>/load_pv_batt_result_*.txt`, `result_<year>/average_load_pv_profile_*.csv`, PV plots |
 
 ## Key conventions & gotchas
 - **Hardcoded paths**: Step 1 reads `source/iwrm/EnergyDayChartAll2022_edit.csv`. Update for other datasets.
 - **Year detection**: Result folder name and the required `solar_1kW_<year>.csv` both come from the first load timestamp's year.
 - **Solar input is required**: Step 4 reads `solar_1kW_<year>.csv` directly from the repo root. There is no NASA/clearsky fallback anymore; a missing file raises `FileNotFoundError`. `solar_profile.py` is now standalone, not imported by step 4.
-- **Solar profile format**: `timestamp,pv` with timestamps in `%d/%m/%Y %H:%M`. `solar_1kW_2022.csv` and `solar_1kW_2023.csv` are identical (typical-year profile). Tracking files exist but step 4 uses the fixed-tilt file by default; switch the commented line to use `_tracking.csv`.
+- **Config is the source of truth (step 4)**: `config.json` holds solar PV, battery, tariff, optimizer, and analysis values. Edit config instead of hardcoding constants. Battery `capacity_kwh: null` means use the percentile heuristic. Keys `capacity_kwh`, `power_limit_kw`, `depth_of_discharge`, `charge_efficiency`, and `discharge_efficiency` are reserved for future battery simulation and are not used yet.
+- **Solar profile format**: `timestamp,pv` with timestamps in `%d/%m/%Y %H:%M`. `solar_1kW_2022.csv` and `solar_1kW_2023.csv` are identical (typical-year profile). Tracking files exist; set `solar_pv.use_tracking` in `config.json` to switch to `solar_1kW_<year>_tracking.csv`.
 - **`temporary/` must already exist**: Step 4 no longer creates `temporary/`; run steps 1-3 first.
-- **Optimizer fallback bug (current)**: For capacities not in `PV_Install_Capacity` (`[1000, 4000]`), `cal_pv_serve_load()` sets the adjustment gain to `mean(PVSyst_Energy_per_year_per_kWp)` (1526) instead of `mean(PV_Energy_Adjust_Factor)` (~1.0878). This inflates PV output ~1400x and makes the optimal-capacity search collapse toward 0. Do not trust the reported optimal capacity until this is fixed; the 1000/4000 kWp preset results are unaffected.
-- **Many result CSVs**: `average_load_pv_profile_<capacity>kWp.csv` is written on every `cal_pv_serve_load()` call, including all binary-search iterations (0, 1, 2, 3, 6, ... 50000 kWp). Expect ~18 files per run.
+- **Optimizer gain**: For capacities not in `solar_pv.install_capacities_kwp`, `cal_pv_serve_load()` uses the mean of `PV_Energy_Adjust_Factor` (~1.0878), not the raw mean PVSyst yield. The old inflation bug is fixed; the current optimal capacity is ~219.73 kWp at 20% curtailment.
+- **Many result CSVs**: `average_load_pv_profile_<capacity>kWp.csv` is written on every `cal_pv_serve_load()` call, including all binary-search iterations. Stale files from earlier runs (for example `0kWp`) are not removed automatically.
 - **`temporary/load_pv_profile.csv`**: Overwritten on each `cal_pv_serve_load()` call; after optimization it contains the last evaluated capacity's data.
 - **Battery**: Step 4 prints a 60th-percentile daily-curtailed-energy battery recommendation. The battery economic/savings block was removed; do not reintroduce it unless requested.
-- **Holidays**: PEA holiday lists are hardcoded in step 3 and step 4 for 2021-2024. Add dates for other years.
+- **Holidays**: Step 4 reads `tariff.holidays` from `config.json` (2021-2024). Step 3 still has its own hardcoded PEA holiday list; update both for other years.
 - **Tariffs**: Default Roland (5.5 THB/kWh on/off peak, 74.14 THB/kW demand, 312.24 THB/month). Alternatives commented for >69kV/22-33kV.
-- **Optimization**: Binary search targets ~20% PV curtailment (0-100000 kW, tol 0.1%). Preset capacities tested are `[1000, 4000] kWp`. See fallback bug above.
+- **Optimization**: Binary search settings live under `optimizer` in `config.json` (target 20%, tolerance 0.1%, range 0-100000 kW). Preset reporting capacities are `[1000, 4000] kWp` under `solar_pv.install_capacities_kwp`.
 - **Plots**: Some plots use `plt.show()` (blocked in non-interactive). Set `MPLBACKEND=Agg` for headless runs.
 - **Windows paths**: Scripts use Windows-style paths; run from repo root.
 - **Git**: `temporary/`, `solar_cache/`, `.venv/` are ignored. `result_2022/` is tracked and currently dirty; don't commit generated changes unless asked.
@@ -86,6 +88,6 @@ python -m py_compile 1_data_cleansing_aggregate.py 2_exploratory_data_analysis.p
 
 ## Editing guidelines
 - Keep existing code style (minimal comments). Don't add emoji/comments unless requested.
-- When changing paths/assumptions (year, tariffs, holidays), update all affected scripts consistently.
+- When changing paths/assumptions (year, tariffs, holidays), update `config.json` and any affected scripts consistently.
 - If modifying step 4, be aware of the binary search calling `cal_pv_serve_load()` multiple times, overwriting `temporary/load_pv_profile.csv`, and writing an `average_load_pv_profile_*.csv` for every iteration.
 - Don't commit generated files (`temporary/`, `solar_cache/`, `.venv/`). Treat `solar_pattern.csv` and `result_2022/` changes as generated unless the user asks.

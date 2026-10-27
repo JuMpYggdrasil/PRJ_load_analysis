@@ -1,37 +1,30 @@
 
 PV Install_cap: 4,000.00 kW
 Energy of pv_produce: 6,400,000.00 kWh/year (Verify with PVSyst)
-  Monthly average PV energy production (kWh/month): 906,737,772,786,637,756,675,650,599,678,706,863
+  Monthly average PV energy production (kWh/month): 764,842,849,816,740,639,645,616,679,656,744,785
 Energy of pv_produce: 1,600.00 kWh/kWp/year
 Energy of pv_produce: 4.38 kWh/kWp/day
 Capacity Factor: 18.26 %
-Energy of pv_curtailed: 5,544,056.46 kWh  (86.63 %)
-Energy of pv_serve_load: 855,943.54 kWh
+Energy of pv_curtailed: 5,589,921.92 kWh  (87.34 %)
+Energy of pv_serve_load: 810,078.08 kWh
 PR ratio (PV): 0.94
-PR ratio (Load): 0.13
+PR ratio (Load): 0.12
 Saved hourly averages -> result_2022/average_load_pv_profile_4,000kWp.csv
-  pv_serve_load -- On Peak: 449,583.28 kWh
-  pv_serve_load -- Off Peak: 174,053.40 kWh
-  pv_serve_load -- holiday: 232,306.86 kWh
-  CO2 Emission Reduction: 415,732 kg-CO2
-Total Base Price: 5,121,008.22 THB
+  pv_serve_load -- On Peak: 431,705.33 kWh
+  pv_serve_load -- Off Peak: 155,396.82 kWh
+  pv_serve_load -- holiday: 222,975.94 kWh
+  CO2 Emission Reduction: 393,455 kg-CO2
+Total Base Price: 4,869,463.68 THB
 	ignore FT & vat
 
-Number of dates can do Double Cycles: 2 days
+Number of dates can do Double Cycles: 5 days
 Number of count_curtailed_day       : 365 days
 Number of count_arbitrage_day       : 0 days
                                 365 ? 365
-Cycle/year 367 cycles
-5000 Cycle = 13.6 year
-6000 Cycle = 16.3 year
-8000 Cycle = 21.8 year
-max battery from PV curtailed: 23,489.40 kWh
-  -- suggest Battery Capacity: 17,212 kWh
+Cycle/year 370 cycles
+5000 Cycle = 13.5 year
+6000 Cycle = 16.2 year
+8000 Cycle = 21.6 year
+max battery from PV curtailed: 22,598.48 kWh
+  -- suggest Battery Capacity: 17,133 kWh
 
-  -- installed Battery       : 500,000 kWh
-  -- suggest Battery Saving  : 27,471,433 THB  (549 THB/kWh/10years)
-         - curtailed saving  : 27,443,079 THB
-         - arbitrage saving  : 0 THB
-         - demand charge sav : 28,353 THB
-         - curtailed energy  : 4,989,651 kWh (Curtail 86.63 % -> 8.66 %)
-

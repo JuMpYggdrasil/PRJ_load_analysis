@@ -71,6 +71,7 @@ PRJ_load_analysis/
 |-- 4_load_pv_batt.py
 |-- PVGIS_TMY.py
 |-- solar_profile.py
+|-- config.json
 |-- requirements.txt
 |-- source/
 |   |-- iwrm/
@@ -102,7 +103,7 @@ PRJ_load_analysis/
 | 1 | `1_data_cleansing_aggregate.py` | `source/iwrm/EnergyDayChartAll2022_edit.csv` | `temporary/prepared_electric_load_data.csv`, daily/monthly peaks, `result_2022/peak_day.png` |
 | 2 | `2_exploratory_data_analysis.py` | `temporary/prepared_electric_load_data.csv` | `temporary/analyse_electric_load_data.csv` and EDA plots |
 | 3 | `3_load_clascify.py` | `temporary/analyse_electric_load_data.csv` | Tariff groups, price JSON, weekday/weekend CSVs, load-duration plots |
-| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv` and `solar_1kW_<year>.csv` | `solar_pattern.csv` (root), PV/curtailment/battery results, optimal capacity, `temporary/load_pv_profile.csv` |
+| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, and `config.json` | `solar_pattern.csv` (root), PV/curtailment/battery results, optimal capacity, `temporary/load_pv_profile.csv` |
 
 ## Script Reference
 
@@ -228,21 +229,19 @@ The holiday list currently covers 2021-2024. Update it when processing other yea
 
 Combines the hourly load data with a local PV profile and evaluates PV self-consumption, curtailment, a battery-size recommendation, and an optimal PV size.
 
-Current configuration:
+All tunable values are loaded from `config.json`:
 
-- Solar input: `solar_1kW_<year>.csv` from the repository root (fixed-tilt profile)
-- Tracking: disabled by default; switch the commented line to `solar_1kW_<year>_tracking.csv` to use it
-- Preset capacities: `1,000` and `4,000 kWp`
-- PVSyst reference yields: `1,452` and `1,600 kWh/kWp/year`
-- Solar normalization reference: `1,402.8119 kWh/kWp/year`
-- PV adjustment factors: `1,452 / 1,402.8119` and `1,600 / 1,402.8119`
-- Optimal-capacity search target: `20%` curtailment
-- Search bounds: `0` to `100,000 kW`
-- Search tolerance: `0.1%`
+| Section | Main keys | Purpose |
+| --- | --- | --- |
+| `solar_pv` | `install_capacities_kwp`, `profile_template`, `tracking_profile_template`, `use_tracking`, `timestamp_format`, `pvsyst_globinc_kwh_per_m2_year`, `pvsyst_yield_kwh_per_kwp_year`, `reference_yield_kwh_per_kwp_year`, `co2_kg_per_kwh` | Solar input file, preset capacities, PVSyst calibration, CO2 factor |
+| `battery` | `sizing_percentile`, `plot_percentiles`, `charge_window_hours`, `discharge_window_hours`, `curtailment_charge_window_hours`, `capacity_kwh`, `power_limit_kw`, `depth_of_discharge`, `charge_efficiency`, `discharge_efficiency` | Battery-size heuristic and operation windows; `capacity_kwh: null` means use the percentile heuristic, and capacity/power/DoD/efficiency fields are reserved for future simulation |
+| `tariff` | `on_peak_thb_per_kwh`, `off_peak_thb_per_kwh`, `demand_charge_thb_per_kw`, `service_charge_thb_per_month`, `on_peak_start_hour`, `on_peak_end_hour_exclusive`, `holidays` | Tariff and TOU assumptions used by step 4 |
+| `optimizer` | `target_curtailment_percent`, `tolerance_percent`, `min_capacity_kw`, `max_capacity_kw`, `max_iterations` | Binary-search settings |
+| `analysis` | `hours_per_year` | Capacity-factor denominator |
 
 The latitude/longitude and `PVGIS_TMY` import are retained, but the solar model is no longer called from this script; the profile is read directly from the CSV. `temporary/` must already exist (steps 1-3 create it), because step 4 no longer creates it.
 
-For a capacity in `PV_Install_Capacity`, the matching adjustment factor is used. For any other capacity, the current code sets the gain to the mean PVSyst yield (`1,526`) instead of the mean adjustment factor (`~1.0878`). This is a known bug: PV output for non-preset capacities is inflated by roughly the normalization factor, so the optimizer collapses toward `0 kW`. Preset `1,000` and `4,000 kWp` results are unaffected. See Known Limitations.
+For a capacity in `solar_pv.install_capacities_kwp`, the matching adjustment factor from `PV_Energy_Adjust_Factor` is used. For any other capacity, the script uses the mean adjustment factor (`~1.0878`), not the raw mean PVSyst yield. This fixes the previous optimizer inflation bug.
 
 Per-capacity calculations include:
 
@@ -252,8 +251,8 @@ Per-capacity calculations include:
 - `load_existing`
 - Capacity factor, using an annual denominator of `8,760` hours
 - On-peak, off-peak, and holiday PV-served energy
-- CO2 reduction using `0.4857 kg-CO2/kWh`
-- Battery sizing heuristic based on the 60th percentile of daily curtailed energy
+- CO2 reduction using the configured `co2_kg_per_kwh`
+- Battery sizing heuristic based on the configured `battery.sizing_percentile` of daily curtailed energy
 
 Main outputs:
 
@@ -266,7 +265,7 @@ Main outputs:
 - Monthly PV/load plots for each preset capacity
 - Hourly load/PV profile plots for each preset capacity
 - Daily curtailment percentile plots for each preset capacity
-- `result_<year>/average_load_pv_profile_<capacity>kWp.csv` for every capacity evaluated, including all binary-search iterations (typically ~18 files: `0`, `1`, `2`, `3`, `6`, ... `50,000 kWp`)
+- `result_<year>/average_load_pv_profile_<capacity>kWp.csv` for every capacity evaluated, including all binary-search iterations (about a dozen files per run; stale files from earlier runs are not removed)
 
 `temporary/load_pv_profile.csv` is overwritten on every internal evaluation. The final file therefore corresponds to the last capacity evaluated by the optimizer.
 
@@ -378,14 +377,14 @@ PV results:
 | `1,000 kWp` | `1,452,000.00 kWh/year` | `596,747.31 kWh` | `855,252.69 kWh` | `58.90%` |
 | `4,000 kWp` | `6,400,000.00 kWh/year` | `810,078.08 kWh` | `5,589,921.92 kWh` | `87.34%` |
 
-Optimal search result from an earlier run (before the non-preset adjustment-factor bug described in Known Limitations):
+Optimal search result:
 
 ```text
 Optimal PV installation capacity: 219.73 kWp
 Curtailment: 20.01%
 ```
 
-With the current code, the optimizer's non-preset capacities use an inflated gain, so the reported optimal capacity is not reliable until that is fixed. The `1,000` and `4,000 kWp` results above are unaffected and remain reproducible.
+With the optimizer gain fix, non-preset capacities use the mean adjustment factor (`~1.0878`). The `1,000` and `4,000 kWp` results above are unchanged.
 
 The battery heuristic suggests approximately `2,618 kWh` at `1,000 kWp` and `17,133 kWh` at `4,000 kWp`. These are percentile-based recommendations only; the battery economic/savings calculation has been removed from step 4.
 
@@ -450,18 +449,18 @@ Experiment artifacts are written to the ignored directory `temporary/solar_compa
 
 - `1_data_cleansing_aggregate.py` hardcodes the input path as `source/iwrm/EnergyDayChartAll2022_edit.csv`.
 - The result folder is named from the first timestamp's year. Processing another year still requires the correct input path.
-- The PEA holiday list in step 3 and step 4 covers 2021-2024 only. Add new dates for other years.
-- Step 4 reports a fixed set of preset capacities: `1,000` and `4,000 kWp`.
-- PV correction factors are calibrated from two capacity points. For other capacities the code currently uses the mean PVSyst yield (`1,526`) instead of the mean adjustment factor (`~1.0878`). This inflates PV output by roughly `1,402.8x`, so the optimal-capacity search collapses toward `0 kW`. Do not trust the optimal capacity until this is fixed; the `1,000`/`4,000 kWp` results are correct.
+- Step 4 reads the holiday list from `tariff.holidays` in `config.json` (2021-2024); step 3 still has its own hardcoded list. Update both for other years.
+- Step 4 reports a fixed set of preset capacities from `solar_pv.install_capacities_kwp`: `1,000` and `4,000 kWp`.
+- PV correction factors are calibrated from two capacity points. For other capacities the code uses the mean adjustment factor (`~1.0878`), not interpolation.
 - Step 4 reads `solar_1kW_<year>.csv` directly and has no fallback. `solar_profile.py` (NASA POWER/clear-sky, fixed-tilt only) is standalone and must be run separately to create profiles.
 - `solar_1kW_2022.csv` and `solar_1kW_2023.csv` have identical `pv` arrays; the local profile is a reference/typical-year profile, not independent observed-2022 data.
 - The NASA POWER 2022 comparison shows similar annual/monthly yield but weak daily correlation (`0.0619`) and a `-19.44%` difference in optimal capacity, so NASA 2022 is not a drop-in replacement for the local profile at daily resolution.
-- The battery recommendation is a heuristic based on the 60th percentile of daily curtailed energy. The battery economic/savings block was removed from step 4.
-- Step 4 writes `average_load_pv_profile_<capacity>kWp.csv` for every capacity it evaluates, so a run leaves about 18 files in `result_<year>/`, including binary-search iterations.
+- The battery recommendation is a heuristic based on `battery.sizing_percentile` (default 60th percentile) of daily curtailed energy. The battery economic/savings block was removed from step 4. `capacity_kwh`, `power_limit_kw`, `depth_of_discharge`, and the efficiency fields are reserved and not used yet.
+- Step 4 writes `average_load_pv_profile_<capacity>kWp.csv` for every capacity it evaluates, so a run leaves about a dozen files in `result_<year>/`, including binary-search iterations. Stale files from earlier runs remain.
 - `solar_pattern.csv` is written to the repository root and is not ignored by `.gitignore`.
 - `result_2022/` is tracked in Git even though it contains generated outputs; avoid committing incidental changes.
 - The `Total Base Price` printed by step 4 is computed from PV-served energy and demand values. It is an indicative PV value calculation, not the full remaining electricity bill after PV installation.
-- Capacity factor calculations assume `8,760` hours in a year; leap years are not adjusted to `8,784`.
+- Capacity factor calculations use `analysis.hours_per_year` (default `8,760`); leap years are not adjusted to `8,784` automatically.
 - Correlation and rolling-mean plots in step 2 are shown but not saved.
 - `temporary/load_without_pv.csv` is a test artifact and is not part of the downstream workflow.
 - `PVGIS_TMY.py` is legacy and writes `tmy_data.csv` when called.
@@ -482,4 +481,4 @@ Then run steps `1` through `4` and confirm that:
 - `solar_pattern.csv` exists at the repository root
 - `result_2022/average_load_pv_profile_1,000kWp.csv` and `average_load_pv_profile_4,000kWp.csv` exist
 - Additional `average_load_pv_profile_*.csv` files exist for the optimizer's intermediate capacities
-- The optimal capacity summary is printed at the end of step 4 (but see Known Limitations before trusting it)
+- The optimal capacity summary is printed at the end of step 4 (expected around `219.73 kWp` at the default `20%` target)
