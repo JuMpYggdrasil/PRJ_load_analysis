@@ -1,0 +1,52 @@
+
+PV Install_cap: 500.00 kW
+PV adjustment factor: 1.069281
+Energy of pv_produce: 750,000.00 kWh/year
+  Monthly PV energy production (kWh/month): 66,584,66,339,73,998,68,873,64,531,53,930,56,276,53,732,57,268,57,236,62,753,68,481
+Energy of pv_produce: 1,500.00 kWh/kWp/year
+Energy of pv_produce: 4.11 kWh/kWp/day
+Capacity Factor: 17.12 %
+PR ratio (PV): 0.88
+PR ratio (Load/PV direct): 0.54
+  pv_serve_load -- On Peak: 263,537.69 kWh
+  pv_serve_load -- Off Peak: 47,583.84 kWh
+  pv_serve_load -- holiday: 144,110.19 kWh
+Energy of pv_serve_load: 455,231.72 kWh
+Energy of pv_export: 277,559.50 kWh
+Energy of pv_surplus: 294,768.28 kWh
+Energy of pv_curtailed: 0.00 kWh (0.00 %)
+PV self-consumption: 472,440.50 kWh (62.99 %)
+Battery controller: schedule
+Battery capacity: 943.37 kWh
+  heuristic capacity: 943.37 kWh (60th percentile)
+Battery power limit: 20.00 kW charge / 20.00 kW discharge
+Battery SOC initial/min/max/end: 471.68 / 188.67 / 849.03 / 545.71 kWh
+Battery charge: 17,208.78 kWh
+Battery discharge: 15,460.60 kWh
+Battery losses: 1,674.15 kWh
+Equivalent full cycles: 20.49
+Grid import: 2,302,958.77 kWh
+Grid export: 277,559.50 kWh
+Grid net: 2,025,399.27 kWh
+Load from grid: 2,302,958.77 kWh
+Peak grid import: 512.38 kW
+CO2 Emission Reduction: 228,615 kg-CO2
+Baseline on-peak: 847,023.25 kWh
+Baseline off-peak: 1,926,627.85 kWh
+Baseline energy cost: 15,255,081.02 THB
+Baseline demand: 5,911.01 kW
+Baseline demand cost: 438,242.61 THB
+Baseline service cost: 3,746.88 THB
+Baseline bill: 15,697,070.51 THB
+System on-peak: 569,044.96 kWh
+System off-peak: 1,733,913.81 kWh
+System energy cost: 12,666,273.25 THB
+System demand: 5,872.47 kW
+System demand cost: 435,384.93 THB
+System service cost: 3,746.88 THB
+Export credit: 0.00 THB
+System bill: 13,105,405.06 THB
+Savings: 2,591,665.46 THB (16.51 %)
+	ignore FT & vat
+
+Saved hourly averages -> result_2022/average_load_pv_profile_500kWp.csv

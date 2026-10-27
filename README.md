@@ -1,6 +1,6 @@
 # Load and PV Analysis
 
-A Python data pipeline for analyzing interval electricity-load data, classifying consumption under a PEA time-of-use tariff, estimating PV self-consumption and curtailment, recommending a battery size, and searching for an optimal PV capacity.
+A Python data pipeline for analyzing interval electricity-load data, classifying consumption under a PEA time-of-use tariff, and simulating a grid + PV + battery + load system with battery SOC, charge/discharge limits, a programmable controller, and bill/savings estimates.
 
 The main workflow is:
 
@@ -69,10 +69,14 @@ PRJ_load_analysis/
 |-- 2_exploratory_data_analysis.py
 |-- 3_load_clascify.py
 |-- 4_load_pv_batt.py
+|-- energy_system.py
+|-- battery_controllers.py
+|-- custom_battery_controller.py
 |-- PVGIS_TMY.py
 |-- solar_profile.py
 |-- config.json
 |-- requirements.txt
+|-- tests/
 |-- source/
 |   |-- iwrm/
 |   |   `-- EnergyDayChartAll2022_edit.csv
@@ -103,7 +107,7 @@ PRJ_load_analysis/
 | 1 | `1_data_cleansing_aggregate.py` | `source/iwrm/EnergyDayChartAll2022_edit.csv` | `temporary/prepared_electric_load_data.csv`, daily/monthly peaks, `result_2022/peak_day.png` |
 | 2 | `2_exploratory_data_analysis.py` | `temporary/prepared_electric_load_data.csv` | `temporary/analyse_electric_load_data.csv` and EDA plots |
 | 3 | `3_load_clascify.py` | `temporary/analyse_electric_load_data.csv` | Tariff groups, price JSON, weekday/weekend CSVs, load-duration plots |
-| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, and `config.json` | `solar_pattern.csv` (root), PV/curtailment/battery results, optimal capacity, `temporary/load_pv_profile.csv` |
+| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, and `config.json` | `solar_pattern.csv` (root), PV/battery/grid results, SOC and bill/savings, `temporary/load_pv_profile_<capacity>kWp.csv`, `temporary/load_pv_profile.csv` |
 
 ## Script Reference
 
@@ -227,47 +231,63 @@ The holiday list currently covers 2021-2024. Update it when processing other yea
 
 ### `4_load_pv_batt.py`
 
-Combines the hourly load data with a local PV profile and evaluates PV self-consumption, curtailment, a battery-size recommendation, and an optimal PV size.
+Combines the hourly load with a 1 kWp PV profile and simulates a grid + PV + battery + load system. It calculates battery SOC, charge/discharge limits, grid import/export, self-consumption, curtailment, and a real bill compared with a no-PV/no-battery baseline. The PV optimal-capacity binary search has been removed; capacities come from `solar_pv.install_capacities_kwp`.
 
 All tunable values are loaded from `config.json`:
 
 | Section | Main keys | Purpose |
 | --- | --- | --- |
 | `solar_pv` | `install_capacities_kwp`, `profile_template`, `tracking_profile_template`, `use_tracking`, `timestamp_format`, `pvsyst_globinc_kwh_per_m2_year`, `pvsyst_yield_kwh_per_kwp_year`, `reference_yield_kwh_per_kwp_year`, `co2_kg_per_kwh` | Solar input file, preset capacities, PVSyst calibration, CO2 factor |
-| `battery` | `sizing_percentile`, `plot_percentiles`, `charge_window_hours`, `discharge_window_hours`, `curtailment_charge_window_hours`, `capacity_kwh`, `power_limit_kw`, `depth_of_discharge`, `charge_efficiency`, `discharge_efficiency` | Battery-size heuristic and operation windows; `capacity_kwh: null` means use the percentile heuristic, and capacity/power/DoD/efficiency fields are reserved for future simulation |
-| `tariff` | `on_peak_thb_per_kwh`, `off_peak_thb_per_kwh`, `demand_charge_thb_per_kw`, `service_charge_thb_per_month`, `on_peak_start_hour`, `on_peak_end_hour_exclusive`, `holidays` | Tariff and TOU assumptions used by step 4 |
-| `optimizer` | `target_curtailment_percent`, `tolerance_percent`, `min_capacity_kw`, `max_capacity_kw`, `max_iterations` | Binary-search settings |
+| `grid` | `allow_export`, `export_limit_kw` | Export permission and optional export power limit |
+| `battery` | `enabled`, `sizing_percentile`, `plot_percentiles`, `capacity_kwh`, `power_limit_kw`, `charge_power_kw`, `discharge_power_kw`, `depth_of_discharge`, `charge_efficiency`, `discharge_efficiency`, `initial_soc_percent`, `allow_grid_charge`, `controller` | Battery sizing, SOC limits, efficiency, and controller |
+| `tariff` | `on_peak_thb_per_kwh`, `off_peak_thb_per_kwh`, `demand_charge_thb_per_kw`, `service_charge_thb_per_month`, `export_thb_per_kwh`, `on_peak_start_hour`, `on_peak_end_hour_exclusive`, `holidays` | Tariff, TOU, and export credit assumptions |
 | `analysis` | `hours_per_year` | Capacity-factor denominator |
 
-The latitude/longitude and `PVGIS_TMY` import are retained, but the solar model is no longer called from this script; the profile is read directly from the CSV. `temporary/` must already exist (steps 1-3 create it), because step 4 no longer creates it.
+The solar profile is read directly from the CSV; `temporary/` must already exist. For a capacity in `solar_pv.install_capacities_kwp`, the matching adjustment factor from `PV_Energy_Adjust_Factor` is used. For any other capacity, the script uses the mean adjustment factor (`~1.0878`).
 
-For a capacity in `solar_pv.install_capacities_kwp`, the matching adjustment factor from `PV_Energy_Adjust_Factor` is used. For any other capacity, the script uses the mean adjustment factor (`~1.0878`), not the raw mean PVSyst yield. This fixes the previous optimizer inflation bug.
+#### Battery model
 
-Per-capacity calculations include:
+- `capacity_kwh: null` uses the configured percentile of daily PV surplus, computed before battery charging and export. Set a fixed capacity to use the same battery for every PV case.
+- `power_limit_kw` is required when the battery is enabled. `charge_power_kw` and `discharge_power_kw` can override it separately.
+- `soc_min = capacity_kwh * (1 - depth_of_discharge)` and `soc_max = capacity_kwh`.
+- Initial SOC is `initial_soc_percent` of capacity, clamped to the SOC limits.
+- Charge/discharge efficiency is applied to energy entering and leaving the battery.
+- `allow_grid_charge: false` prevents grid charging. Controller rules can request `source: "grid"`, but it is ignored unless this flag is enabled.
+- Grid is a net flow: positive means import from the main grid, negative means export. With `allow_export: true`, PV surplus not stored or served is exported. `export_thb_per_kwh` is currently `0`, so export does not reduce the bill.
 
-- `pv_produce`
-- `pv_serve_load`
-- `pv_curtailed`
-- `load_existing`
-- Capacity factor, using an annual denominator of `8,760` hours
-- On-peak, off-peak, and holiday PV-served energy
-- CO2 reduction using the configured `co2_kg_per_kwh`
-- Battery sizing heuristic based on the configured `battery.sizing_percentile` of daily curtailed energy
+#### Battery controller
+
+`battery.controller.name` selects the controller:
+
+- `self_consumption`: charge from PV surplus and discharge to load whenever possible.
+- `schedule`: JSON rules for selected days and hours. Outside matching rules, `default_action` applies.
+- `custom`: uses `CustomController` from `custom_battery_controller.py`, which can be edited directly.
+
+Schedule rules support `days` (`mon`...`sun` or `0`...`6`), `start`/`end` (`HH:MM`, end-exclusive), `action` (`charge`, `discharge`, `idle`, `self_consumption`), `source` (`pv`, `grid`, `any`, `battery`), `power_kw`, `target_soc_percent`, `allow_export`, and `enabled`. The last matching rule wins. The current schedule demonstrates weekday-only operation: discharge on Monday-Friday 18:00-21:00, charge from PV on Monday-Friday 10:00-14:00, and **idle** at all other times because `default_action` is `idle`.
+
+The simulation always enforces SOC bounds, power limits, efficiency, and grid permissions after the controller returns a command. A custom controller therefore cannot exceed the physical limits.
+
+#### Per-case calculations
+
+- PV produced, PV served load directly, PV charged to battery, PV exported, and PV curtailed
+- PV self-consumption and curtailment percentages
+- Battery charge, discharge, losses, equivalent full cycles, and SOC min/max/end
+- Grid import, export, net flow, load from grid, and peak grid import
+- Baseline bill from load only, system bill from grid import, demand charge, service charge, export credit, and savings
+- Capacity factor, on/off-peak PV served, CO2 reduction, and PR ratios
 
 Main outputs:
 
-- `solar_pattern.csv` (repository root, not `temporary/`)
+- `solar_pattern.csv` (repository root)
 - `temporary/pv_data_for_train_model.csv`
 - `temporary/param_for_economic.json`
-- `temporary/load_pv_profile.csv`
-- `result_<year>/load_pv_batt_result_1000.txt`
-- `result_<year>/load_pv_batt_result_4000.txt`
-- Monthly PV/load plots for each preset capacity
-- Hourly load/PV profile plots for each preset capacity
-- Daily curtailment percentile plots for each preset capacity
-- `result_<year>/average_load_pv_profile_<capacity>kWp.csv` for every capacity evaluated, including all binary-search iterations (about a dozen files per run; stale files from earlier runs are not removed)
+- `temporary/load_pv_profile_<capacity>kWp.csv`
+- `temporary/load_pv_profile.csv` (last evaluated capacity)
+- `result_<year>/load_pv_batt_result_<capacity>.txt`
+- Monthly load/PV plots, average load/PV/grid plots, battery SOC/power plots, grid profile plots, and PV surplus percentile plots
+- `result_<year>/average_load_pv_profile_<capacity>kWp.csv`
 
-`temporary/load_pv_profile.csv` is overwritten on every internal evaluation. The final file therefore corresponds to the last capacity evaluated by the optimizer.
+Old binary-search `average_load_pv_profile_*` files may still exist from earlier runs; step 4 no longer creates them.
 
 ### `solar_profile.py`
 
@@ -328,7 +348,7 @@ timestamp,pv
 
 The `pv` column represents hourly PV output per installed kWp. Step 4 requires the file matching the load year; for the 2022 dataset this is `solar_1kW_2022.csv`. There is no fallback if the file is missing.
 
-Profiles such as `temporary/solar_compare/nasa_2022_normalized.csv` are reference profiles at 1 kWp, not at a specific installed capacity. Their annual yield is normalized to `1,402.8119 kWh/kWp/year`; installed capacity is applied later when PV production is calculated. For example, `1,000` and `4,000 kWp` are multipliers used in the PV analysis, not properties of the normalized profile file.
+Profiles such as `temporary/solar_compare/nasa_2022_normalized.csv` are reference profiles at 1 kWp, not at a specific installed capacity. Their annual yield is normalized to `1,402.8119 kWh/kWp/year`; installed capacity is applied later when PV production is calculated. For example, the currently configured `100` and `500 kWp` are multipliers used in the PV analysis, not properties of the normalized profile file.
 
 ### Legacy TMY data
 
@@ -367,28 +387,24 @@ The current sample run uses the existing `solar_1kW_2022.csv` profile.
 Load summary:
 
 - Total load: `2,773,651.09 kWh`
-- Base electricity price: `15,697,070.51 THB`
-- Base price excludes FT and VAT
+- Baseline bill (load only): `15,697,070.51 THB`
+- Bill excludes FT and VAT
 
-PV results:
+PV and grid results:
 
-| Installed PV | PV production | PV served load | Curtailed PV | Curtailment |
-| --- | --- | --- | --- | --- |
-| `1,000 kWp` | `1,452,000.00 kWh/year` | `596,747.31 kWh` | `855,252.69 kWh` | `58.90%` |
-| `4,000 kWp` | `6,400,000.00 kWh/year` | `810,078.08 kWh` | `5,589,921.92 kWh` | `87.34%` |
+| Installed PV | PV production | PV served load | PV surplus | PV exported | PV curtailed |
+| --- | --- | --- | --- | --- | --- |
+| `100 kWp` | `144,800.00 kWh/year` | `131,658.86 kWh` | `13,141.14 kWh` | `9,753.99 kWh` | `0.00 kWh` |
+| `500 kWp` | `750,000.00 kWh/year` | `455,231.72 kWh` | `294,768.28 kWh` | `277,559.50 kWh` | `0.00 kWh` |
 
-Optimal search result:
+Battery and bill results:
 
-```text
-Optimal PV installation capacity: 219.73 kWp
-Curtailment: 20.01%
-```
+| Installed PV | Battery capacity | Battery charge | Battery discharge | Grid import | Grid export | System bill | Savings |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `100 kWp` | `73.16 kWh` | `3,387.15 kWh` | `3,077.75 kWh` | `2,638,914.48 kWh` | `9,753.99 kWh` | `14,955,596.70 THB` | `741,473.82 THB` (`4.72%`) |
+| `500 kWp` | `943.37 kWh` | `17,208.78 kWh` | `15,460.60 kWh` | `2,302,958.77 kWh` | `277,559.50 kWh` | `13,105,405.06 THB` | `2,591,665.46 THB` (`16.51%`) |
 
-With the optimizer gain fix, non-preset capacities use the mean adjustment factor (`~1.0878`). The `1,000` and `4,000 kWp` results above are unchanged.
-
-The battery heuristic suggests approximately `2,618 kWh` at `1,000 kWp` and `17,133 kWh` at `4,000 kWp`. These are percentile-based recommendations only; the battery economic/savings calculation has been removed from step 4.
-
-Example outputs are snapshots and will change when inputs or assumptions change.
+These results use the current weekday-only schedule with `default_action: idle`, `20 kW` charge/discharge power limits, and `0 THB/kWh` export credit. Because the battery is idle outside the scheduled windows, it only operates on weekday afternoons and evenings. PV surplus is exported because `grid.allow_export` is `true`. Example outputs are snapshots and will change when inputs or config change.
 
 ## Solar Profile Comparison: Local vs NASA POWER 2022
 
@@ -401,7 +417,7 @@ Method:
 - Normalize the NASA profile to the local annual yield of `1,402.8119 kWh/kWp/year`.
 - Compare profile shape and PV metrics against `solar_1kW_2022.csv`.
 
-The NASA profile is a 1 kWp reference profile. It is not calculated at `1,000` or `4,000 kWp`; those capacities are applied only in the PV metrics calculation.
+The NASA profile is a 1 kWp reference profile. In the historical comparison below, it is not calculated at `1,000` or `4,000 kWp`; those capacities are applied only in the PV metrics calculation.
 
 Annual yield before normalization:
 
@@ -425,22 +441,20 @@ Profile shape metrics for NASA normalized vs local:
 | Peak output | local `0.7513`, NASA `0.8841 kW/kWp` |
 | Mean peak-hour shift | `0 h` |
 
-PV metrics:
+Historical PV-only metrics (before the grid + battery refactor):
 
 | Case | Local served | NASA served | Served change | Local curtailment | NASA curtailment |
 | --- | --- | --- | --- | --- | --- |
 | `1,000 kWp` | `596,747.3 kWh` | `587,657.0 kWh` | `-1.52%` | `58.90%` | `59.53%` |
 | `4,000 kWp` | `810,078.1 kWh` | `855,943.5 kWh` | `+5.66%` | `87.34%` | `86.63%` |
-| Optimal (`20%` target) | `268,207.5 kWh` | `215,815.5 kWh` | `-19.53%` | `20.01%` | `20.10%` |
 
-The optimal capacities are `219.73 kWp` for the local profile and `177.00 kWp` for the normalized NASA profile, a change of `-19.44%`.
+These columns use the old PV-only model and are retained for profile comparison. They are not current step 4 battery/bill results.
 
 Interpretation:
 
 - Annual and monthly energy are similar, but the daily pattern is not: daily correlation is only `0.0619`.
 - All-hours correlation (`0.8956`) is inflated by matching nighttime zeros; daytime correlation (`0.7621`) is the more meaningful profile metric.
-- The optimal PV capacity changes from `219.73` to `177.00 kWp` (`-19.44%`), so the profiles are not interchangeable for sizing.
-- The comparison is classified as **different** using the project thresholds (close: daytime correlation >= `0.95`, monthly share difference <= `5 pp`, optimal capacity difference <= `5%`).
+- The profiles are not interchangeable at daily resolution; NASA 2022 should not be used as a drop-in replacement for the local profile without re-running the full analysis.
 - The local `solar_1kW_2022.csv` and `solar_1kW_2023.csv` files have identical `pv` arrays. The local profile therefore behaves like a reference/typical-year profile rather than independent observed-2022 data.
 
 Experiment artifacts are written to the ignored directory `temporary/solar_compare/` and are not committed.
@@ -450,35 +464,40 @@ Experiment artifacts are written to the ignored directory `temporary/solar_compa
 - `1_data_cleansing_aggregate.py` hardcodes the input path as `source/iwrm/EnergyDayChartAll2022_edit.csv`.
 - The result folder is named from the first timestamp's year. Processing another year still requires the correct input path.
 - Step 4 reads the holiday list from `tariff.holidays` in `config.json` (2021-2024); step 3 still has its own hardcoded list. Update both for other years.
-- Step 4 reports a fixed set of preset capacities from `solar_pv.install_capacities_kwp`: `1,000` and `4,000 kWp`.
+- Step 4 reports the capacities in `solar_pv.install_capacities_kwp`; the current config uses `100` and `500 kWp`.
 - PV correction factors are calibrated from two capacity points. For other capacities the code uses the mean adjustment factor (`~1.0878`), not interpolation.
 - Step 4 reads `solar_1kW_<year>.csv` directly and has no fallback. `solar_profile.py` (NASA POWER/clear-sky, fixed-tilt only) is standalone and must be run separately to create profiles.
 - `solar_1kW_2022.csv` and `solar_1kW_2023.csv` have identical `pv` arrays; the local profile is a reference/typical-year profile, not independent observed-2022 data.
-- The NASA POWER 2022 comparison shows similar annual/monthly yield but weak daily correlation (`0.0619`) and a `-19.44%` difference in optimal capacity, so NASA 2022 is not a drop-in replacement for the local profile at daily resolution.
-- The battery recommendation is a heuristic based on `battery.sizing_percentile` (default 60th percentile) of daily curtailed energy. The battery economic/savings block was removed from step 4. `capacity_kwh`, `power_limit_kw`, `depth_of_discharge`, and the efficiency fields are reserved and not used yet.
-- Step 4 writes `average_load_pv_profile_<capacity>kWp.csv` for every capacity it evaluates, so a run leaves about a dozen files in `result_<year>/`, including binary-search iterations. Stale files from earlier runs remain.
+- The NASA POWER 2022 comparison shows similar annual/monthly yield but weak daily correlation (`0.0619`), so NASA 2022 is not a drop-in replacement for the local profile at daily resolution.
+- When `battery.capacity_kwh` is `null`, battery capacity is a heuristic based on `battery.sizing_percentile` (default 60th percentile) of daily PV surplus. The heuristic depends on the PV profile and controller assumptions, so re-check it after changing either.
+- The battery controller is evaluated hourly. The schedule's last matching rule wins, and the simulator clamps commands to SOC, power, efficiency, and grid-charge permissions afterward.
+- Step 4 writes `average_load_pv_profile_<capacity>kWp.csv` only for configured capacities. Stale `average_load_pv_profile_*.csv` files from the removed binary search may remain in `result_<year>/`.
+- `temporary/load_pv_profile.csv` is overwritten by the last configured capacity. Use `temporary/load_pv_profile_<capacity>kWp.csv` when comparing capacities.
 - `solar_pattern.csv` is written to the repository root and is not ignored by `.gitignore`.
 - `result_2022/` is tracked in Git even though it contains generated outputs; avoid committing incidental changes.
-- The `Total Base Price` printed by step 4 is computed from PV-served energy and demand values. It is an indicative PV value calculation, not the full remaining electricity bill after PV installation.
+- The system bill excludes FT and VAT. It uses grid import, peak grid import for the demand charge, the service charge, and export credit (`0 THB/kWh` by default). It is not a full PEA bill.
 - Capacity factor calculations use `analysis.hours_per_year` (default `8,760`); leap years are not adjusted to `8,784` automatically.
 - Correlation and rolling-mean plots in step 2 are shown but not saved.
 - `temporary/load_without_pv.csv` is a test artifact and is not part of the downstream workflow.
 - `PVGIS_TMY.py` is legacy and writes `tmy_data.csv` when called.
-- There is no automated test suite. Verify changes by running `py_compile` and the full pipeline.
+- The unit tests cover the energy-system core. Changes to step 4 orchestration or plotting still require a full pipeline run.
 - The scripts use Windows-style paths and should be run from the repository root.
 
 ## Verification
 
-A basic syntax check can be run before executing the pipeline (with `.venv` active):
+Run the energy-system tests and syntax check before executing the pipeline (with `.venv` active):
 
 ```powershell
-python -m py_compile 1_data_cleansing_aggregate.py 2_exploratory_data_analysis.py 3_load_clascify.py 4_load_pv_batt.py solar_profile.py PVGIS_TMY.py
+python -m unittest discover -s tests -t . -v
+python -m py_compile 1_data_cleansing_aggregate.py 2_exploratory_data_analysis.py 3_load_clascify.py 4_load_pv_batt.py energy_system.py battery_controllers.py custom_battery_controller.py solar_profile.py PVGIS_TMY.py
 ```
 
 Then run steps `1` through `4` and confirm that:
 
 - `temporary/load_pv_profile.csv` has `8,760` data rows
+- `temporary/load_pv_profile_100kWp.csv` and `temporary/load_pv_profile_500kWp.csv` exist
 - `solar_pattern.csv` exists at the repository root
-- `result_2022/average_load_pv_profile_1,000kWp.csv` and `average_load_pv_profile_4,000kWp.csv` exist
-- Additional `average_load_pv_profile_*.csv` files exist for the optimizer's intermediate capacities
-- The optimal capacity summary is printed at the end of step 4 (expected around `219.73 kWp` at the default `20%` target)
+- `result_2022/average_load_pv_profile_100kWp.csv` and `average_load_pv_profile_500kWp.csv` exist
+- `result_2022/load_pv_batt_result_100.txt` and `load_pv_batt_result_500.txt` include battery SOC/charge/discharge, grid import/export, system bill, and savings
+- Battery SOC stays within configured limits, battery power stays within its power limits, and grid export respects `grid.export_limit_kw`
+- The run prints one result per configured capacity and does not perform an optimal-capacity search

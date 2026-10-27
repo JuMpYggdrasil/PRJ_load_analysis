@@ -1,32 +1,75 @@
 {
   "solar_pv": {
-    "install_capacities_kwp": [1000, 4000],
+    "install_capacities_kwp": [100, 500],
     "profile_template": "solar_1kW_{year}.csv",
     "tracking_profile_template": "solar_1kW_{year}_tracking.csv",
     "use_tracking": false,
     "timestamp_format": "%d/%m/%Y %H:%M",
     "pvsyst_globinc_kwh_per_m2_year": 1699.9,
-    "pvsyst_yield_kwh_per_kwp_year": [1452, 1600],
+    "pvsyst_yield_kwh_per_kwp_year": [1448, 1500],
     "reference_yield_kwh_per_kwp_year": 1402.8119,
     "co2_kg_per_kwh": 0.4857
   },
+  "grid": {
+    "allow_export": true,
+    "export_limit_kw": null
+  },
   "battery": {
+    "enabled": true,
     "sizing_percentile": 0.6,
     "plot_percentiles": [0.4, 0.6, 0.8],
-    "charge_window_hours": {"start": 6, "end": 8},
-    "discharge_window_hours": {"start": 9, "end": 10},
-    "curtailment_charge_window_hours": {"start": 11, "end": 13},
     "capacity_kwh": null,
-    "power_limit_kw": null,
+    "power_limit_kw": 500,
+    "charge_power_kw": 20,
+    "discharge_power_kw": 20,
     "depth_of_discharge": 0.8,
     "charge_efficiency": 0.95,
-    "discharge_efficiency": 0.95
+    "discharge_efficiency": 0.95,
+    "initial_soc_percent": 50,
+    "allow_grid_charge": false,
+    "controller": {
+      "name": "schedule",
+      "default_action": "idle",
+      "rules": [
+        {
+          "days": ["mon", "tue", "wed", "thu", "fri"],
+          "start": "18:00",
+          "end": "21:00",
+          "action": "discharge",
+          "source": "battery",
+          "target_soc_percent": 20,
+          "allow_export": true,
+          "enabled": true
+        },
+        {
+          "days": ["mon", "tue", "wed", "thu", "fri"],
+          "start": "10:00",
+          "end": "14:00",
+          "action": "charge",
+          "source": "pv",
+          "target_soc_percent": 90,
+          "allow_export": true,
+          "enabled": true
+        },
+        {
+          "days": ["mon", "tue", "wed", "thu", "fri"],
+          "start": "06:00",
+          "end": "09:00",
+          "action": "charge",
+          "source": "grid",
+          "target_soc_percent": 30,
+          "allow_export": false,
+          "enabled": false
+        }
+      ]
+    }
   },
   "tariff": {
     "on_peak_thb_per_kwh": 5.5,
     "off_peak_thb_per_kwh": 5.5,
     "demand_charge_thb_per_kw": 74.14,
     "service_charge_thb_per_month": 312.24,
+    "export_thb_per_kwh": 0.0,
     "on_peak_start_hour": 9,
     "on_peak_end_hour_exclusive": 22,
     "holidays": [
@@ -88,13 +131,6 @@
       "2024-12-10",
       "2024-12-31"
     ]
-  },
-  "optimizer": {
-    "target_curtailment_percent": 20,
-    "tolerance_percent": 0.1,
-    "min_capacity_kw": 0,
-    "max_capacity_kw": 100000,
-    "max_iterations": 100
   },
   "analysis": {
     "hours_per_year": 8760

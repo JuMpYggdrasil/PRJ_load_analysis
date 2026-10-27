@@ -1,78 +1,121 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import os
 import json
-# from deap import base, creator, tools, algorithms
+import os
+import sys
 
-# Online section for weather database TMY
-from PVGIS_TMY import PVGIS_TMY
-latitude, longitude = 13.811739286586437, 100.50565968620579
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from battery_controllers import build_controller
+from energy_system import (
+    calculate_bill,
+    calculate_metrics,
+    daily_pv_surplus_kwh,
+    infer_dt_hours,
+    resolve_battery_spec,
+    simulate_system,
+    suggested_battery_capacity_kwh,
+)
 
 CONFIG_PATH = "config.json"
+
 
 def load_config(path=CONFIG_PATH):
     with open(path, encoding="utf-8") as config_file:
         config = json.load(config_file)
 
-    required_sections = ["solar_pv", "battery", "tariff", "optimizer", "analysis"]
+    required_sections = ["solar_pv", "grid", "battery", "tariff", "analysis"]
     missing_sections = [section for section in required_sections if section not in config]
     if missing_sections:
         raise KeyError(f"Missing config sections: {', '.join(missing_sections)}")
 
     solar_cfg = config["solar_pv"]
-    if len(solar_cfg["install_capacities_kwp"]) != len(solar_cfg["pvsyst_yield_kwh_per_kwp_year"]):
+    if len(solar_cfg["install_capacities_kwp"]) != len(
+        solar_cfg["pvsyst_yield_kwh_per_kwp_year"]
+    ):
         raise ValueError(
             "solar_pv.install_capacities_kwp and solar_pv.pvsyst_yield_kwh_per_kwp_year "
             "must have the same length"
         )
 
+    grid_cfg = config["grid"]
+    if grid_cfg.get("export_limit_kw") is not None and float(
+        grid_cfg["export_limit_kw"]
+    ) < 0:
+        raise ValueError("grid.export_limit_kw must be non-negative or null")
+
+    battery_cfg = config["battery"]
+    if battery_cfg.get("enabled", True):
+        power_limit = battery_cfg.get("power_limit_kw")
+        if power_limit is None or float(power_limit) <= 0:
+            raise ValueError("battery.power_limit_kw must be greater than 0")
+        capacity = battery_cfg.get("capacity_kwh")
+        if capacity is not None and float(capacity) <= 0:
+            raise ValueError("battery.capacity_kwh must be greater than 0 or null")
+        if not 0 < float(battery_cfg.get("depth_of_discharge", 0.8)) <= 1:
+            raise ValueError("battery.depth_of_discharge must be in (0, 1]")
+        if not 0 < float(battery_cfg.get("charge_efficiency", 0.95)) <= 1:
+            raise ValueError("battery.charge_efficiency must be in (0, 1]")
+        if not 0 < float(battery_cfg.get("discharge_efficiency", 0.95)) <= 1:
+            raise ValueError("battery.discharge_efficiency must be in (0, 1]")
+        if not 0 <= float(battery_cfg.get("initial_soc_percent", 50)) <= 100:
+            raise ValueError("battery.initial_soc_percent must be in [0, 100]")
+        for key in ("charge_power_kw", "discharge_power_kw"):
+            value = battery_cfg.get(key)
+            if value is not None and float(value) <= 0:
+                raise ValueError(f"battery.{key} must be greater than 0 or null")
+        build_controller(battery_cfg.get("controller"))
+
+    tariff_cfg = config["tariff"]
+    required_tariff_keys = [
+        "on_peak_thb_per_kwh",
+        "off_peak_thb_per_kwh",
+        "demand_charge_thb_per_kw",
+        "service_charge_thb_per_month",
+        "on_peak_start_hour",
+        "on_peak_end_hour_exclusive",
+        "holidays",
+    ]
+    missing_tariff_keys = [key for key in required_tariff_keys if key not in tariff_cfg]
+    if missing_tariff_keys:
+        raise KeyError(f"Missing tariff keys: {', '.join(missing_tariff_keys)}")
+    if float(tariff_cfg.get("export_thb_per_kwh", 0.0)) < 0:
+        raise ValueError("tariff.export_thb_per_kwh must be non-negative")
+
     return config
+
 
 config = load_config()
 solar_cfg = config["solar_pv"]
+grid_cfg = config["grid"]
 battery_cfg = config["battery"]
 tariff_cfg = config["tariff"]
-optimizer_cfg = config["optimizer"]
 analysis_cfg = config["analysis"]
 
-PV_Install_Capacity = solar_cfg["install_capacities_kwp"] # kW
-PVSyst_GlobInc = solar_cfg["pvsyst_globinc_kwh_per_m2_year"] # (PVSyst: GlobInc kWh/m2/year)
-PVSyst_Energy_per_year_per_kWp = solar_cfg["pvsyst_yield_kwh_per_kwp_year"] # (PVSyst kWh/year/kWp)
+PV_Install_Capacity = solar_cfg["install_capacities_kwp"]
+PVSyst_GlobInc = solar_cfg["pvsyst_globinc_kwh_per_m2_year"]
+PVSyst_Energy_per_year_per_kWp = solar_cfg["pvsyst_yield_kwh_per_kwp_year"]
 SOLAR_REFERENCE_YIELD = solar_cfg["reference_yield_kwh_per_kwp_year"]
-PV_Energy_Adjust_Factor = [x/SOLAR_REFERENCE_YIELD for x in PVSyst_Energy_per_year_per_kWp]
+PV_Energy_Adjust_Factor = [
+    value / SOLAR_REFERENCE_YIELD for value in PVSyst_Energy_per_year_per_kWp
+]
 print(PV_Energy_Adjust_Factor)
 
 unit_price_on_peak = tariff_cfg["on_peak_thb_per_kwh"]
 unit_price_off_peak = tariff_cfg["off_peak_thb_per_kwh"]
 unit_price_demand_charge = tariff_cfg["demand_charge_thb_per_kw"]
 unit_price_service_charge = tariff_cfg["service_charge_thb_per_month"]
-
 kg_CO2_per_kWh = solar_cfg["co2_kg_per_kwh"]
 hours_per_year = analysis_cfg["hours_per_year"]
 
-battery_capacity_kwh = battery_cfg["capacity_kwh"]
-battery_power_limit_kw = battery_cfg["power_limit_kw"]
-battery_depth_of_discharge = battery_cfg["depth_of_discharge"]
-battery_charge_efficiency = battery_cfg["charge_efficiency"]
-battery_discharge_efficiency = battery_cfg["discharge_efficiency"]
+df_load = pd.read_csv("temporary/analyse_electric_load_data.csv", parse_dates=["timestamp"])
+df_load.set_index("timestamp", inplace=True)
 
-df_load = pd.read_csv('temporary/analyse_electric_load_data.csv', parse_dates=['timestamp'])
-df_load.set_index('timestamp', inplace=True)
-
-
-first_row_timestamp = df_load.index[0]
-year_of_first_row = first_row_timestamp.year
-# Create the folder if it doesn't exist
+year_of_first_row = df_load.index[0].year
 folder_name = f"result_{year_of_first_row}"
 if not os.path.exists(folder_name):
     os.makedirs(folder_name)
     print(f"Folder '{folder_name}' created.")
 
-
-
-
-# === tracking or fixed === #
 solar_profile_template = (
     solar_cfg["tracking_profile_template"]
     if solar_cfg["use_tracking"]
@@ -81,463 +124,545 @@ solar_profile_template = (
 solar_profile_path = solar_profile_template.format(year=year_of_first_row)
 df_pv = pd.read_csv(
     solar_profile_path,
-    parse_dates=['timestamp'],
+    parse_dates=["timestamp"],
     date_format=solar_cfg["timestamp_format"],
 )
-df_pv.set_index('timestamp', inplace=True)
+df_pv.set_index("timestamp", inplace=True)
 
-
-# Calculate hourly averages for each hour of the day
 solar_pattern = []
 for hour in range(24):
-    solar_pattern.append(df_pv['pv'][df_pv.index.hour == hour].mean())
-    
+    solar_pattern.append(df_pv["pv"][df_pv.index.hour == hour].mean())
+
 print(solar_pattern)
-df_solar_pattern = pd.DataFrame(solar_pattern)
-df_solar_pattern.to_csv("solar_pattern.csv")
+pd.DataFrame(solar_pattern).to_csv("solar_pattern.csv")
 
-df_pv_day = df_pv.resample('D').max()
+df_pv_day = df_pv.resample("D").max()
 df_pv_data = pd.DataFrame(index=df_pv_day.index)
+df_pv_data["pv_max"] = df_pv_day["pv"]
+df_pv_data["pv_5"] = df_pv[df_pv.index.hour == 5].resample("D").mean()["pv"]
+df_pv_data["pv_6"] = df_pv[df_pv.index.hour == 6].resample("D").mean()["pv"]
+df_pv_data["pv_7"] = df_pv[df_pv.index.hour == 7].resample("D").mean()["pv"]
+df_pv_data.to_csv("temporary/pv_data_for_train_model.csv")
 
-df_pv_data['pv_max'] = df_pv_day['pv']
-df_pv_data['pv_5']=df_pv[df_pv.index.hour == 5].resample('D').mean()['pv']
-df_pv_data['pv_6']=df_pv[df_pv.index.hour == 6].resample('D').mean()['pv']
-df_pv_data['pv_7']=df_pv[df_pv.index.hour == 7].resample('D').mean()['pv']
-df_pv_data.to_csv('temporary/pv_data_for_train_model.csv')
-
-
-
-# Create a list of hours (0 to 23) for the x-axis
 hours = list(range(24))
-
-# selected_month_mask = (df.index.month == 2) # for view specific month
-selected_month_mask = True # for all month
-
-
-# check must be "datetime64[ns]"
-print(df_load.index.dtype)
-print(df_pv.index.dtype)
-
-# Specify the file path
+month_name = [
+    "",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "None",
+]
 file_path = "temporary/param_for_economic.json"
-
-# Check if the file exists
 if os.path.exists(file_path):
-    # Delete the file
     os.remove(file_path)
 
-def cal_pv_serve_load(df_pv,df_load,pv_install_capacity,ENplot=False):
-    def safe_index(lst, item):
-        try:
-            return lst.index(item)
-        except ValueError:
-            return -1
 
-    # first_six_month_mask = (df_pv.index.month >= 1) & (df_pv.index.month <= 6)
-    # last_six_month_mask = (df_pv.index.month >= 7) & (df_pv.index.month <= 12)
-    # first_six_month_data = df_pv["pv"][first_six_month_mask] * pv_install_capacity * PV_Energy_Adjust_Factor_1_6
-    # last_six_month_data = df_pv["pv"][last_six_month_mask] * pv_install_capacity * PV_Energy_Adjust_Factor_7_12
-    
-    # df_load["pv_produce"] = pd.concat([first_six_month_data, last_six_month_data])
-    
-    l_index = safe_index(PV_Install_Capacity,pv_install_capacity)
-    if l_index != -1:
-        PV_Energy_Adjust_Factor_gain= PV_Energy_Adjust_Factor[l_index]
-    else:
-        PV_Energy_Adjust_Factor_gain = sum(PV_Energy_Adjust_Factor)/len(PV_Energy_Adjust_Factor)
-    
-    df_load["pv_produce"] = df_pv["pv"] * pv_install_capacity * PV_Energy_Adjust_Factor_gain
-    df_load["pv_serve_load"] = np.where(df_load['pv_produce'] > df_load['load'], df_load['load'], df_load['pv_produce'])
-    df_load['pv_curtailed'] = np.maximum(0, df_load['pv_produce'] - df_load['pv_serve_load'])
-    df_load['load_existing'] = df_load['load'] - df_load['pv_serve_load']
+def safe_index(values, item):
+    try:
+        return values.index(item)
+    except ValueError:
+        return -1
 
-    target_month = [1,2,3,4,5,6,7,8,9,10,11,12]
-    target_month_show = [3,8]
-    month_name = ['','January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'None']
 
-    if ENplot:
-        for month in target_month:
-            plt.figure(figsize=(14, 6))
-            # Plotting 'load' and 'pv_serve_load' columns against the timestamp index
-            plt.plot(df_load.index, df_load['load'], label='Load')
-            plt.plot(df_load.index, df_load['pv_produce'], label='PV Produce')
+def pv_adjustment_factor(pv_install_capacity):
+    index = safe_index(PV_Install_Capacity, pv_install_capacity)
+    if index != -1:
+        return PV_Energy_Adjust_Factor[index]
+    return sum(PV_Energy_Adjust_Factor) / len(PV_Energy_Adjust_Factor)
 
-            # Adding labels and title
-            plt.xlabel('Timestamp')
-            plt.ylabel('Load')
-            plt.title(f"Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}")
 
-            # Adding legend
-            plt.legend()
+def build_average_profile(result):
+    data = result.data
+    columns = {
+        "average_load_kW": "load_kw",
+        "average_pv_kW": "pv_kw",
+        "average_pv_to_load_kW": "pv_to_load_kw",
+        "average_batt_charge_kW": "batt_charge_kw",
+        "average_batt_discharge_kW": "batt_discharge_kw",
+        "average_grid_import_kW": "grid_import_kw",
+        "average_grid_export_kW": "grid_export_kw",
+        "average_grid_net_kW": "grid_net_kw",
+        "average_soc_percent": "batt_soc_percent",
+    }
+    hourly = data.groupby(data.index.hour)[list(columns.values())].mean()
+    hourly = hourly.reindex(range(24)).fillna(0.0)
+    average_profile = pd.DataFrame({"hour": hours})
+    for output_column, source_column in columns.items():
+        average_profile[output_column] = hourly[source_column].to_numpy()
+    return average_profile
 
-            
-            ## Set x-axis limits to the current target month
-            # Get the first date in the DataFrame's index
-            start_date = df_load.index[0]
-            start_of_target_month = start_date.replace(month=month, day=1)
-            start_of_next_month = (start_of_target_month + pd.DateOffset(months=1)).replace(day=1)
-            # Set the x-axis limits to span from the start of the target month to the start of the next month
-            plt.xlim((start_of_target_month, start_of_next_month))
 
-            plt.savefig(f"result_{year_of_first_row}/Load_and_PV({pv_install_capacity:,.0f}_kWp)_{month}_{month_name[month]}.png", format="png")
-            if month in target_month_show:
-                # Display the plot
-                plt.show()
-            else:
-                plt.close()  # Close the plot to free up memory
-        
-    
+def print_report(
+    pv_install_capacity,
+    adjustment_factor,
+    result,
+    metrics,
+    bill,
+    suggested_capacity,
+):
+    data = result.data
+    dt_hours = result.dt_hours
+    battery = result.battery
 
-    sum_pv_produce = df_load['pv_produce'].sum()
-    capacity_factor = (sum_pv_produce/pv_install_capacity/hours_per_year*100)
-    # print(f"pv_install_capacity: {pv_install_capacity:,.2f} kW")
-    print(f"Energy of pv_produce: {sum_pv_produce:,.2f} kWh/year (Verify with PVSyst)")
-    # Initialize list to store monthly average PV energy
-    pv_energy_monthly = []
-    # Calculate the average PV energy for each month
-    for mth in range(1, 13):  # Use 13 to include December
-        monthly_mean = df_load['pv_produce'][df_load.index.month == mth].mean()
-        pv_energy_monthly.append(monthly_mean)
-    # Print the monthly averages in a formatted way
-    formatted_pv_energy = ','.join([f"{value:,.0f}" for value in pv_energy_monthly])
-    print(f"  Monthly average PV energy production (kWh/month): {formatted_pv_energy}")
-    
-    print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity):,.2f} kWh/kWp/year")
-    print(f"Energy of pv_produce: {(sum_pv_produce/pv_install_capacity/365):,.2f} kWh/kWp/day")
+    print(f"\nPV Install_cap: {pv_install_capacity:,.2f} kW")
+    print(f"PV adjustment factor: {adjustment_factor:.6f}")
+    print(f"Energy of pv_produce: {metrics['pv_produced_kwh']:,.2f} kWh/year")
+    monthly_pv = (data["pv_kw"] * dt_hours).groupby(data.index.month).sum()
+    formatted_monthly_pv = ",".join(
+        f"{monthly_pv.get(month, 0.0):,.0f}" for month in range(1, 13)
+    )
+    print(f"  Monthly PV energy production (kWh/month): {formatted_monthly_pv}")
+    print(
+        f"Energy of pv_produce: "
+        f"{metrics['pv_produced_kwh'] / pv_install_capacity:,.2f} kWh/kWp/year"
+    )
+    print(
+        f"Energy of pv_produce: "
+        f"{metrics['pv_produced_kwh'] / pv_install_capacity / 365:,.2f} kWh/kWp/day"
+    )
+    capacity_factor = (
+        metrics["pv_produced_kwh"] / pv_install_capacity / hours_per_year * 100
+    )
     print(f"Capacity Factor: {capacity_factor:,.2f} %")
-    
+    print(f"PR ratio (PV): {metrics['pv_produced_kwh'] / PVSyst_GlobInc / pv_install_capacity:,.2f}")
+    print(f"PR ratio (Load/PV direct): {metrics['pv_to_load_kwh'] / PVSyst_GlobInc / pv_install_capacity:,.2f}")
 
-    sum_pv_curtailed = df_load['pv_curtailed'].sum()
-    sum_pv_curtailed_percent = (sum_pv_curtailed/sum_pv_produce*100)
-    print(f"Energy of pv_curtailed: {sum_pv_curtailed:,.2f} kWh  ({sum_pv_curtailed_percent:.2f} %)")
-    sum_pv_serve_load = df_load['pv_serve_load'].sum()
-    print(f"Energy of pv_serve_load: {sum_pv_serve_load:,.2f} kWh")
-    print(f"PR ratio (PV): {(sum_pv_produce/PVSyst_GlobInc/pv_install_capacity):,.2f}")
-    print(f"PR ratio (Load): {(sum_pv_serve_load/PVSyst_GlobInc/pv_install_capacity):,.2f}")
+    on_peak_mask = data["is_on_peak"]
+    holiday_mask = data["is_holiday"] | ~data["is_weekday"]
+    off_peak_weekday_mask = data["is_weekday"] & ~data["is_holiday"] & ~data["is_on_peak"]
+    pv_to_load_on_peak = data.loc[on_peak_mask, "pv_to_load_kw"].sum() * dt_hours
+    pv_to_load_off_peak = (
+        data.loc[off_peak_weekday_mask, "pv_to_load_kw"].sum() * dt_hours
+    )
+    pv_to_load_holiday = data.loc[holiday_mask, "pv_to_load_kw"].sum() * dt_hours
+    print(f"  pv_serve_load -- On Peak: {pv_to_load_on_peak:,.2f} kWh")
+    print(f"  pv_serve_load -- Off Peak: {pv_to_load_off_peak:,.2f} kWh")
+    print(f"  pv_serve_load -- holiday: {pv_to_load_holiday:,.2f} kWh")
+    print(f"Energy of pv_serve_load: {metrics['pv_to_load_kwh']:,.2f} kWh")
+    print(f"Energy of pv_export: {metrics['pv_export_kwh']:,.2f} kWh")
+    print(f"Energy of pv_surplus: {metrics['pv_surplus_kwh']:,.2f} kWh")
+    print(
+        f"Energy of pv_curtailed: {metrics['pv_curtailed_kwh']:,.2f} kWh "
+        f"({metrics['curtailment_percent']:.2f} %)"
+    )
+    print(
+        f"PV self-consumption: {metrics['self_consumed_kwh']:,.2f} kWh "
+        f"({metrics['self_consumption_percent']:.2f} %)"
+    )
+
+    if battery is None:
+        print("Battery: disabled")
+    else:
+        print(f"Battery controller: {result.controller_name}")
+        print(f"Battery capacity: {battery.capacity_kwh:,.2f} kWh")
+        if suggested_capacity is not None:
+            print(
+                f"  heuristic capacity: {suggested_capacity:,.2f} kWh "
+                f"({battery_cfg['sizing_percentile'] * 100:.0f}th percentile)"
+            )
+        print(
+            f"Battery power limit: {battery.max_charge_power_kw:,.2f} kW charge / "
+            f"{battery.max_discharge_power_kw:,.2f} kW discharge"
+        )
+        print(
+            f"Battery SOC initial/min/max/end: "
+            f"{metrics['soc_initial_kwh']:,.2f} / {metrics['soc_min_kwh']:,.2f} / "
+            f"{metrics['soc_max_kwh']:,.2f} / {metrics['soc_end_kwh']:,.2f} kWh"
+        )
+        print(f"Battery charge: {metrics['batt_charge_kwh']:,.2f} kWh")
+        print(f"Battery discharge: {metrics['batt_discharge_kwh']:,.2f} kWh")
+        print(f"Battery losses: {metrics['batt_loss_kwh']:,.2f} kWh")
+        print(f"Equivalent full cycles: {metrics['equivalent_cycles']:,.2f}")
+
+    print(f"Grid import: {metrics['grid_import_kwh']:,.2f} kWh")
+    print(f"Grid export: {metrics['grid_export_kwh']:,.2f} kWh")
+    print(f"Grid net: {metrics['grid_net_kwh']:,.2f} kWh")
+    print(f"Load from grid: {metrics['load_from_grid_kwh']:,.2f} kWh")
+    print(f"Peak grid import: {metrics['peak_grid_import_kw']:,.2f} kW")
+    print(
+        f"CO2 Emission Reduction: "
+        f"{metrics['grid_import_reduction_kwh'] * kg_CO2_per_kWh:,.0f} kg-CO2"
+    )
+
+    print(f"Baseline on-peak: {bill['baseline_on_peak_kwh']:,.2f} kWh")
+    print(f"Baseline off-peak: {bill['baseline_off_peak_kwh']:,.2f} kWh")
+    print(f"Baseline energy cost: {bill['baseline_energy_cost']:,.2f} THB")
+    print(f"Baseline demand: {bill['baseline_demand_kw']:,.2f} kW")
+    print(f"Baseline demand cost: {bill['baseline_demand_cost']:,.2f} THB")
+    print(f"Baseline service cost: {bill['baseline_service_cost']:,.2f} THB")
+    print(f"Baseline bill: {bill['baseline_total']:,.2f} THB")
+    print(f"System on-peak: {bill['system_on_peak_kwh']:,.2f} kWh")
+    print(f"System off-peak: {bill['system_off_peak_kwh']:,.2f} kWh")
+    print(f"System energy cost: {bill['system_energy_cost']:,.2f} THB")
+    print(f"System demand: {bill['system_demand_kw']:,.2f} kW")
+    print(f"System demand cost: {bill['system_demand_cost']:,.2f} THB")
+    print(f"System service cost: {bill['system_service_cost']:,.2f} THB")
+    print(f"Export credit: {bill['export_credit']:,.2f} THB")
+    print(f"System bill: {bill['system_total']:,.2f} THB")
+    print(f"Savings: {bill['savings']:,.2f} THB ({bill['savings_percent']:.2f} %)")
+    print("\tignore FT & vat\n\r")
+
+
+def plot_monthly_profiles(result, pv_install_capacity):
+    data = result.data
+    target_month_show = [3, 8]
+    start_date = data.index[0]
+    for month in range(1, 13):
+        figure, axis = plt.subplots(figsize=(14, 6))
+        axis.plot(data.index, data["load_kw"], label="Load")
+        axis.plot(data.index, data["pv_kw"], label="PV Produce")
+        axis.set_xlabel("Timestamp")
+        axis.set_ylabel("Power (kW)")
+        axis.set_title(
+            f"Load and PV({pv_install_capacity:,.0f} kWp) {month_name[month]}"
+        )
+        axis.legend()
+        start_of_target_month = start_date.replace(month=month, day=1)
+        start_of_next_month = (
+            start_of_target_month + pd.DateOffset(months=1)
+        ).replace(day=1)
+        axis.set_xlim((start_of_target_month, start_of_next_month))
+        figure.savefig(
+            f"result_{year_of_first_row}/"
+            f"Load_and_PV({pv_install_capacity:,.0f}_kWp)_{month}_{month_name[month]}.png",
+            format="png",
+        )
+        if month in target_month_show:
+            plt.show()
+        plt.close(figure)
+
+
+def plot_average_profile(result, average_profile, pv_install_capacity):
+    figure, axis = plt.subplots(figsize=(12, 6))
+    axis.plot(
+        average_profile["hour"],
+        average_profile["average_load_kW"],
+        label="average_load_patterns",
+        marker="o",
+    )
+    axis.plot(
+        average_profile["hour"],
+        average_profile["average_pv_kW"],
+        label="average_pv_patterns",
+        marker="o",
+    )
+    axis.plot(
+        average_profile["hour"],
+        average_profile["average_grid_net_kW"],
+        label="average_grid_net_kW",
+        marker="o",
+    )
+    pv_above_load = (
+        average_profile["average_pv_kW"] > average_profile["average_load_kW"]
+    )
+    axis.fill_between(
+        average_profile["hour"],
+        average_profile["average_load_kW"],
+        average_profile["average_pv_kW"],
+        where=pv_above_load,
+        color="darkviolet",
+        alpha=0.5,
+    )
+    axis.fill_between(
+        average_profile["hour"],
+        average_profile["average_load_kW"],
+        average_profile["average_pv_kW"],
+        where=pv_above_load,
+        color="none",
+        hatch="///",
+        edgecolor="purple",
+    )
+    axis.set_title(f"Hourly Electrical Load & PV Profile({pv_install_capacity:,.0f}_kWp)")
+    axis.set_xlabel("Hour of the Day")
+    axis.set_ylabel("Average Load & PV (kW)")
+    axis.legend()
+    axis.grid(True)
+    axis.set_xticks(hours)
+    figure.savefig(
+        f"result_{year_of_first_row}/load_pv({pv_install_capacity:,.0f}_kWp).png",
+        format="png",
+    )
+    plt.close(figure)
+
+
+def plot_battery_profiles(result, pv_install_capacity):
+    if result.battery is None:
+        return
+
+    data = result.data
+    dt_hours = result.dt_hours
+
+    daily_soc = data["batt_soc_percent"].resample("D").agg(["min", "mean", "max"])
+    figure, axis = plt.subplots(figsize=(14, 6))
+    axis.plot(daily_soc.index, daily_soc["min"], label="SOC min")
+    axis.plot(daily_soc.index, daily_soc["mean"], label="SOC mean")
+    axis.plot(daily_soc.index, daily_soc["max"], label="SOC max")
+    axis.set_title(f"Battery SOC ({pv_install_capacity:,.0f} kWp)")
+    axis.set_xlabel("Date")
+    axis.set_ylabel("SOC (%)")
+    axis.legend()
+    axis.grid(True)
+    figure.savefig(
+        f"result_{year_of_first_row}/battery_soc_{pv_install_capacity:,.0f}kWp.png",
+        format="png",
+    )
+    plt.close(figure)
+
+    daily_battery = pd.DataFrame(
+        {
+            "charge_kwh": data["batt_charge_kw"].resample("D").sum() * dt_hours,
+            "discharge_kwh": data["batt_discharge_kw"].resample("D").sum() * dt_hours,
+        }
+    )
+    figure, axis = plt.subplots(figsize=(14, 6))
+    axis.plot(daily_battery.index, daily_battery["charge_kwh"], label="Charge")
+    axis.plot(daily_battery.index, daily_battery["discharge_kwh"], label="Discharge")
+    axis.set_title(f"Battery Energy ({pv_install_capacity:,.0f} kWp)")
+    axis.set_xlabel("Date")
+    axis.set_ylabel("Energy (kWh/day)")
+    axis.legend()
+    axis.grid(True)
+    figure.savefig(
+        f"result_{year_of_first_row}/battery_power_{pv_install_capacity:,.0f}kWp.png",
+        format="png",
+    )
+    plt.close(figure)
+
+
+def plot_grid_profile(result, pv_install_capacity):
+    data = result.data
+    dt_hours = result.dt_hours
+    daily_grid = pd.DataFrame(
+        {
+            "import_kwh": data["grid_import_kw"].resample("D").sum() * dt_hours,
+            "export_kwh": data["grid_export_kw"].resample("D").sum() * dt_hours,
+        }
+    )
+    figure, axis = plt.subplots(figsize=(14, 6))
+    axis.plot(daily_grid.index, daily_grid["import_kwh"], label="Grid import")
+    axis.plot(
+        daily_grid.index,
+        -daily_grid["export_kwh"],
+        label="Grid export (negative)",
+    )
+    axis.set_title(f"Grid Energy ({pv_install_capacity:,.0f} kWp)")
+    axis.set_xlabel("Date")
+    axis.set_ylabel("Energy (kWh/day)")
+    axis.legend()
+    axis.grid(True)
+    figure.savefig(
+        f"result_{year_of_first_row}/grid_profile_{pv_install_capacity:,.0f}kWp.png",
+        format="png",
+    )
+    plt.close(figure)
+
+
+def plot_surplus_percentiles(result, pv_install_capacity):
+    data = result.data
+    daily_surplus = daily_pv_surplus_kwh(
+        data["load_kw"], data["pv_kw"], result.dt_hours
+    )
+    daily_surplus = daily_surplus[daily_surplus > 1.0]
+    if daily_surplus.empty:
+        return
+
+    percentile_values = {
+        percentile: daily_surplus.quantile(percentile)
+        for percentile in battery_cfg["plot_percentiles"]
+    }
+    figure, axis = plt.subplots(figsize=(10, 6))
+    axis.plot(daily_surplus.index, daily_surplus, marker="o", label="PV surplus")
+    plot_styles = ["lime", "g", "lightgreen"]
+    for percentile, color in zip(
+        sorted(battery_cfg["plot_percentiles"], reverse=True), plot_styles
+    ):
+        axis.axhline(
+            y=percentile_values[percentile],
+            color=color,
+            linestyle="--"
+            if percentile != battery_cfg["sizing_percentile"]
+            else "-",
+            label=(
+                f"{percentile * 100:.0f}th Percentile "
+                f"({percentile_values[percentile]:,.0f} kWh)"
+            ),
+        )
+    axis.set_title(
+        f"PV Surplus with {battery_cfg['sizing_percentile'] * 100:.0f}th Percentile "
+        f"({pv_install_capacity:,.0f} kWp)"
+    )
+    axis.set_xlabel("Date")
+    axis.set_ylabel("PV surplus (kWh/day)")
+    axis.legend()
+    axis.grid(True)
+    figure.savefig(
+        f"result_{year_of_first_row}/"
+        f"pv_surplus_percentile_{pv_install_capacity:,.0f}kWp.png",
+        format="png",
+    )
+    plt.close(figure)
+
+
+def save_case_outputs(
+    pv_install_capacity,
+    result,
+    average_profile,
+    metrics,
+    bill,
+):
+    result.data.to_csv(
+        f"temporary/load_pv_profile_{pv_install_capacity:,.0f}kWp.csv",
+        index_label="timestamp",
+    )
+    result.data.to_csv("temporary/load_pv_profile.csv", index_label="timestamp")
+    average_profile.to_csv(
+        f"result_{year_of_first_row}/"
+        f"average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv",
+        index=False,
+    )
+    print(
+        f"Saved hourly averages -> result_{year_of_first_row}/"
+        f"average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv"
+    )
 
     param_econ = {
         "installed_capacity": pv_install_capacity,
-        "capacity_factor": capacity_factor,
-        "energy_of_pv_produce": sum_pv_produce,
-        "energy_of_pv_serve_load": sum_pv_serve_load
+        "capacity_factor": (
+            metrics["pv_produced_kwh"]
+            / pv_install_capacity
+            / hours_per_year
+            * 100
+        ),
+        "energy_of_pv_produce": metrics["pv_produced_kwh"],
+        "energy_of_pv_serve_load": metrics["pv_to_load_kwh"],
+        "battery_capacity_kwh": (
+            result.battery.capacity_kwh if result.battery is not None else 0
+        ),
+        "battery_power_limit_kw": (
+            result.battery.power_limit_kw if result.battery is not None else 0
+        ),
+        "grid_import_kwh": metrics["grid_import_kwh"],
+        "grid_export_kwh": metrics["grid_export_kwh"],
+        "baseline_bill_thb": bill["baseline_total"],
+        "system_bill_thb": bill["system_total"],
+        "savings_thb": bill["savings"],
     }
-    
-    if ENplot:
-        # Append the data to the JSON file
-        with open(file_path, "a") as json_file:
-            json.dump(param_econ, json_file)
-            json_file.write("\n")
-    
-
-    
-    
-    df = df_load
-    
-    # Calculate hourly averages for each hour of the day for all 7 days of the week
-    average_load_patterns = []
-    average_pv_patterns = []
-    day_data = df
-    for hour in range(24):
-        average_load_patterns.append(day_data['load'][day_data.index.hour == hour].mean())
-        average_pv_patterns.append(day_data['pv_produce'][day_data.index.hour == hour].mean())
-        
-    # Create a list of hours (0 to 23) for the x-axis
-    hours = list(range(24))
-    
-    # Save hourly average load & PV profiles to CSV
-    avg_df = pd.DataFrame({
-        'hour': hours,
-        'average_load_kW': pd.Series(average_load_patterns, dtype=float),
-        'average_pv_kW': pd.Series(average_pv_patterns, dtype=float)
-    })
-    avg_df.to_csv(f"result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv", index=False)
-    print(f"Saved hourly averages -> result_{year_of_first_row}/average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv")
-
-    
-
-    if ENplot:
-        # Plot the hourly data for weekdays and weekends
-        plt.figure(figsize=(12, 6))
-        plt.plot(hours, average_load_patterns, label='average_load_patterns', marker='o')
-        plt.plot(hours, average_pv_patterns, label='average_pv_patterns', marker='o')
-        # Highlight the area where average_pv_patterns > average_load_patterns
-        # Highlight the area where average_pv_patterns > average_load_patterns
-        plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
-                    where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
-                    color='darkviolet', alpha=0.5)
-
-        # Add a hatched pattern using an additional fill_between
-        plt.fill_between(hours, average_load_patterns, average_pv_patterns, 
-                        where=[pv > load for pv, load in zip(average_pv_patterns, average_load_patterns)], 
-                        color='none', hatch='///', edgecolor='purple')
-
-        plt.title(f'Hourly Electrical Load  & PV Profile({pv_install_capacity:,.0f}_kWp)')
-        plt.xlabel('Hour of the Day')
-        plt.ylabel('Average Load & PV (kW)')
-        plt.legend()
-        plt.grid(True)
-        plt.xticks(hours)
-        plt.savefig(f"result_{year_of_first_row}/load_pv({pv_install_capacity:,.0f}_kWp).png", format="png")
-        plt.show()
-        
-        
-
-    weekday_mask = (df.index.dayofweek >= 0) & (df.index.dayofweek < 5)
-    weekend_mask = (df.index.dayofweek >= 5)
-    on_peak_mask = (
-        (df.index.hour >= tariff_cfg["on_peak_start_hour"])
-        & (df.index.hour < tariff_cfg["on_peak_end_hour_exclusive"])
-    )
-    off_peak_mask = ~on_peak_mask
-    # PEA off-peak date @(MON-FRI) special
-    specific_dates = pd.to_datetime(tariff_cfg["holidays"], format='%Y-%m-%d')
-    specific_dates_mask = df.index.isin(specific_dates)
+    with open(file_path, "a", encoding="utf-8") as json_file:
+        json.dump(param_econ, json_file)
+        json_file.write("\n")
 
 
-    # Apply the masks to create the "On Peak", "Off Peak" and "Holiday" groups
-    on_peak_data = df[weekday_mask & ~specific_dates_mask & on_peak_mask & selected_month_mask]
-    off_peak_data = df[weekday_mask & ~specific_dates_mask & off_peak_mask & selected_month_mask]
-    holiday_data = df[(specific_dates_mask | weekend_mask) & selected_month_mask]
+def evaluate_case(df_pv, df_load, pv_install_capacity):
+    adjustment_factor = pv_adjustment_factor(pv_install_capacity)
+    pv_produce = df_pv["pv"] * pv_install_capacity * adjustment_factor
+    aligned = pd.concat(
+        [df_load["load"].rename("load_kw"), pv_produce.rename("pv_kw")],
+        axis=1,
+        join="inner",
+    ).dropna()
+    if aligned.empty:
+        raise ValueError("Load and PV data have no overlapping timestamps")
 
+    dt_hours = infer_dt_hours(aligned.index)
+    battery_spec = None
+    controller = None
+    suggested_capacity = None
 
-    sum_on_peak_data = on_peak_data['pv_serve_load'].sum()
-    print(f"  pv_serve_load -- On Peak: {sum_on_peak_data:,.2f} kWh")
-
-    sum_off_peak_data = off_peak_data['pv_serve_load'].sum()
-    print(f"  pv_serve_load -- Off Peak: {sum_off_peak_data:,.2f} kWh")
-
-    sum_holiday_data = holiday_data['pv_serve_load'].sum()
-    print(f"  pv_serve_load -- holiday: {sum_holiday_data:,.2f} kWh")
-    
-    print(f"  CO2 Emission Reduction: {(sum_pv_serve_load*kg_CO2_per_kWh):,.0f} kg-CO2")
-    
-    demand_charge_df = df['pv_serve_load'].resample('M').max()
-    sum_demand_charge = demand_charge_df.sum()
-    # print(f"Sum of demand_charge: {sum_demand_charge:.2f} kW")
-
-    price_on_peak = unit_price_on_peak * sum_on_peak_data
-    # print(f"price_on_peak: {price_on_peak:,.2f} THB")
-
-    price_off_peak = unit_price_off_peak * (sum_off_peak_data+sum_holiday_data)
-    # print(f"price_off_peak: {price_off_peak:,.2f} THB")
-
-    price_demand_charge = unit_price_demand_charge * sum_demand_charge
-    # print(f"price_demand_charge: {price_demand_charge:,.2f} THB")
-
-    price_service_charge = unit_price_service_charge * 12
-
-    total_price = price_on_peak + price_off_peak + price_demand_charge + price_service_charge
-    print(f"Total Base Price: {total_price:,.2f} THB")
-    print("\tignore FT & vat\n\r")
-
-    
-    # Define the time ranges and masks
-    charge_time_start = battery_cfg["charge_window_hours"]["start"] # charge
-    charge_time_finish = battery_cfg["charge_window_hours"]["end"]
-    charge_time_mask = (df.index.hour >= charge_time_start) & (df.index.hour <= charge_time_finish)
-
-    extra_time_start = battery_cfg["discharge_window_hours"]["start"] # discharge
-    extra_time_finish = battery_cfg["discharge_window_hours"]["end"]
-    extra_time_mask = (df.index.hour >= extra_time_start) & (df.index.hour <= extra_time_finish)
-
-    post_extra_time_start = battery_cfg["curtailment_charge_window_hours"]["start"] # charge
-    post_extra_time_finish = battery_cfg["curtailment_charge_window_hours"]["end"]
-    post_extra_time_mask = (df.index.hour >= post_extra_time_start) & (df.index.hour <= post_extra_time_finish)
-
-    # Calculate load_existing_charge_kWh_df during charge time
-    load_existing_charge_kWh_df = df[charge_time_mask]['load_existing'].resample('D').sum()
-
-    # Calculate load_existing_extra_discharge_kWh_df during extra time
-    load_existing_extra_discharge_kWh_df = df[extra_time_mask]['load_existing'].resample('D').sum()
-
-    # Calculate pv_curtailed_charge_kWh_df during post-extra time
-    pv_curtailed_charge_kWh_df = df[post_extra_time_mask]['pv_curtailed'].resample('D').sum()
-
-    # Create the initial intermediate DataFrame
-    initial_intermediate_df = pd.DataFrame({
-        'load_existing_charge_kWh': load_existing_charge_kWh_df,
-        'load_existing_extra_discharge_kWh': load_existing_extra_discharge_kWh_df,
-        'pv_curtailed_charge_kWh': pv_curtailed_charge_kWh_df
-    })
-
-    # Create masks for days where load_existing_extra_discharge_kWh_df > 0 and pv_curtailed_charge_kWh_df > 0
-    extra_discharge_mask = load_existing_extra_discharge_kWh_df > 0
-    post_extra_time_mask = pv_curtailed_charge_kWh_df > 0
-
-    extra_condition_mask = extra_discharge_mask & post_extra_time_mask
-
-    # # Apply masks to filter the DataFrame
-    # filtered_intermediate_df = initial_intermediate_df[extra_condition_mask]
-
-    
-    pv_curtailed_kWh_df = df['pv_curtailed'].resample('D').sum()
-    pv_curtailed_kWh_df = pv_curtailed_kWh_df[pv_curtailed_kWh_df > 1]
-    # Filter pv_curtailed_kWh_df for dates where pv_curtailed sum is greater than 1
-    pv_curtailed_filtered_dates = pv_curtailed_kWh_df[pv_curtailed_kWh_df > 1].index
-    max_pv_curtailed_kWh = pv_curtailed_kWh_df.max()
-
-    
-
-    # Invert the filter to get dates where pv_curtailed sum is not greater than 1
-    load_existing_charge_kWh_df_1 = load_existing_charge_kWh_df[~load_existing_charge_kWh_df.index.isin(pv_curtailed_filtered_dates)]
-    load_existing_charge_kWh_df_2 = load_existing_charge_kWh_df[extra_condition_mask]
-
-    # Combine load_existing_charge_kWh_df_1 and load_existing_charge_kWh_df_2
-    load_existing_charge_kWh_df = pd.concat([load_existing_charge_kWh_df_1, load_existing_charge_kWh_df_2]).sort_index()
-
-    count_curtailed_day = pv_curtailed_kWh_df.index.nunique()
-    count_arbitrage_day = load_existing_charge_kWh_df_1.index.nunique()
-    count_double_cycle_day = load_existing_charge_kWh_df_2.index.nunique()
-
-    # Print the count
-    print(f"Number of dates can do Double Cycles: {count_double_cycle_day} days")
-    print(f"Number of count_curtailed_day       : {count_curtailed_day} days")
-    print(f"Number of count_arbitrage_day       : {count_arbitrage_day} days")
-    print(f"                                365 ? {(count_curtailed_day+count_arbitrage_day)}")
-
-
-
-    count_both_case_day = count_double_cycle_day + count_curtailed_day + count_arbitrage_day
-    print(f"Cycle/year {count_both_case_day} cycles")
-    print(f"5000 Cycle = {(5000/count_both_case_day):,.1f} year")
-    print(f"6000 Cycle = {(6000/count_both_case_day):,.1f} year")
-    print(f"8000 Cycle = {(8000/count_both_case_day):,.1f} year")
-
-    # Calculate percentile-based battery recommendations
-    battery_sizing_percentile = battery_cfg["sizing_percentile"]
-    battery_plot_percentiles = battery_cfg["plot_percentiles"]
-    percentile_values = {
-        percentile: pv_curtailed_kWh_df.quantile(percentile)
-        for percentile in battery_plot_percentiles
-    }
-    suggested_battery_kwh = pv_curtailed_kWh_df.quantile(battery_sizing_percentile)
-    print(f"max battery from PV curtailed: {max_pv_curtailed_kWh:,.2f} kWh")
-    print(f"  -- suggest Battery Capacity: {suggested_battery_kwh:,.0f} kWh\n\r")
-
-    
-
-    if ENplot:
-        # Create a plot
-        plt.figure(figsize=(10, 6))
-
-        # Plotting the data
-        plt.plot(pv_curtailed_kWh_df, marker='o', label='PV Curtailed')
-
-        plot_styles = ['lime', 'g', 'lightgreen']
-        for percentile, color in zip(
-            sorted(battery_plot_percentiles, reverse=True), plot_styles
-        ):
-            plt.axhline(
-                y=percentile_values[percentile],
-                color=color,
-                linestyle='--' if percentile != battery_sizing_percentile else '-',
-                label=f'{percentile*100:.0f}th Percentile ({percentile_values[percentile]})',
+    if battery_cfg.get("enabled", True):
+        if battery_cfg.get("capacity_kwh") is None:
+            suggested_capacity = suggested_battery_capacity_kwh(
+                aligned["load_kw"],
+                aligned["pv_kw"],
+                battery_cfg["sizing_percentile"],
+                dt_hours,
             )
-
-        # Adding title and labels
-        plt.title(
-            f'PV Curtailed with {battery_sizing_percentile*100:.0f}th Percentile Line '
-            f'({pv_install_capacity:,.0f} kWp)'
-        )
-        plt.xlabel('Index')
-        plt.ylabel('Values')
-
-        # Adding a legend
-        plt.legend()
-
-        plt.savefig(f"result_{year_of_first_row}/pv_curtailed_60_percentile_{pv_install_capacity:,.0f}kWp.png", format="png")
-        # Show the plot
-        plt.show()
-    
-
-
-        
-    
-
-
-    df.to_csv('temporary/load_pv_profile.csv')
-
-    return sum_pv_curtailed_percent,total_price
-
-
-
-for install_cap in PV_Install_Capacity:
-    import sys
-    original_stdout = sys.stdout
-    # Open a text file in write mode
-    with open(f'result_{year_of_first_row}/load_pv_batt_result_{install_cap}.txt', 'w') as f:
-        # Redirect the standard output to the text file
-        sys.stdout = f
-        
-        print(f"\n\rPV Install_cap: {install_cap:,.2f} kW")
-        cal_pv_serve_load(df_pv,df_load,install_cap,ENplot=True)
-    
-    sys.stdout = original_stdout       
-
-    # After exiting the 'with' block, the standard output will be reverted back to the console
-
-def find_optimal_pv_capacity(
-    df_pv,
-    df_load,
-    target_percent=10,
-    tolerance=0.1,
-    max_iterations=100,
-    min_capacity_kw=0,
-    max_capacity_kw=100000,
-):
-    """
-    Finds the optimal PV installation capacity using a binary search method to meet a target percentage of curtailed PV energy.
-
-    Parameters:
-    df_pv (DataFrame): DataFrame containing the PV generation data.
-    df_load (DataFrame): DataFrame containing the load data.
-    target_percent (float): The target percentage of PV energy curtailment. Default is 10%.
-    tolerance (float): The acceptable tolerance around the target percentage. Default is 0.1%.
-    max_iterations (int): The maximum number of iterations for the binary search. Default is 100.
-    min_capacity_kw (float): Minimum capacity for the search range. Default is 0.
-    max_capacity_kw (float): Maximum capacity for the search range. Default is 100,000.
-
-    Returns:
-    float: The optimal PV installation capacity that best meets the target percentage of curtailed PV energy.
-    str: A summary string showing the percentage of PV curtailed for the best-found capacity.
-
-    The function performs a binary search between the configured minimum and maximum PV installation capacity.
-    In each iteration, it calculates the percentage of PV energy curtailed using the `cal_pv_serve_load` function.
-    If the calculated curtailment is within the specified tolerance of the target percentage, it returns the current capacity.
-    Otherwise, it adjusts the search range by comparing the calculated curtailment to the target.
-    If the maximum number of iterations is reached, the function returns the best-found capacity and its corresponding curtailment.
-    """
-    low = min_capacity_kw
-    high = max_capacity_kw
-    iterations = 0
-    sum_pv_curtailed_percent_txt = ""
-    mid = (low + high) / 2
-
-    while iterations < max_iterations:
-        mid = (low + high) / 2
-        sum_pv_curtailed_percent, _ = cal_pv_serve_load(df_pv, df_load, mid)
-        sum_pv_curtailed_percent_txt = f" PV curtailed {sum_pv_curtailed_percent:,.2f}"
-
-        if abs(sum_pv_curtailed_percent - target_percent) <= tolerance:
-            return mid, sum_pv_curtailed_percent_txt
-
-        if sum_pv_curtailed_percent < target_percent:
-            low = mid
+            if suggested_capacity > 0:
+                battery_spec = resolve_battery_spec(battery_cfg, suggested_capacity)
         else:
-            high = mid
+            battery_spec = resolve_battery_spec(battery_cfg)
 
-        iterations += 1
+        if battery_spec is not None:
+            controller = build_controller(battery_cfg.get("controller"))
+        else:
+            print("Battery skipped: no usable PV surplus for heuristic sizing")
 
-    return mid, sum_pv_curtailed_percent_txt  # Return the best found value if max_iterations is reached
+    result = simulate_system(
+        aligned["load_kw"],
+        aligned["pv_kw"],
+        battery_spec,
+        controller,
+        allow_grid_charge=bool(battery_cfg.get("allow_grid_charge", False)),
+        allow_export=bool(grid_cfg.get("allow_export", True)),
+        export_limit_kw=grid_cfg.get("export_limit_kw"),
+        holidays=tariff_cfg["holidays"],
+        on_peak_start_hour=tariff_cfg["on_peak_start_hour"],
+        on_peak_end_hour_exclusive=tariff_cfg["on_peak_end_hour_exclusive"],
+        controller_name=controller.name if controller is not None else "none",
+    )
+    metrics = calculate_metrics(result)
+    bill = calculate_bill(result, tariff_cfg)
+    average_profile = build_average_profile(result)
+
+    print_report(
+        pv_install_capacity,
+        adjustment_factor,
+        result,
+        metrics,
+        bill,
+        suggested_capacity,
+    )
+    save_case_outputs(
+        pv_install_capacity,
+        result,
+        average_profile,
+        metrics,
+        bill,
+    )
+    plot_monthly_profiles(result, pv_install_capacity)
+    plot_average_profile(result, average_profile, pv_install_capacity)
+    plot_battery_profiles(result, pv_install_capacity)
+    plot_grid_profile(result, pv_install_capacity)
+    plot_surplus_percentiles(result, pv_install_capacity)
+
+    return {
+        "capacity": pv_install_capacity,
+        "metrics": metrics,
+        "bill": bill,
+        "suggested_capacity": suggested_capacity,
+    }
 
 
-optimal_capacity, curtailed_percent_txt = find_optimal_pv_capacity(
-    df_pv,
-    df_load,
-    target_percent=optimizer_cfg["target_curtailment_percent"],
-    tolerance=optimizer_cfg["tolerance_percent"],
-    max_iterations=optimizer_cfg["max_iterations"],
-    min_capacity_kw=optimizer_cfg["min_capacity_kw"],
-    max_capacity_kw=optimizer_cfg["max_capacity_kw"],
-)
-print(f"The optimal PV installation capacity is {optimal_capacity:,.2f} kW,{curtailed_percent_txt}%")
+def main():
+    summaries = []
+    for install_cap in PV_Install_Capacity:
+        report_path = (
+            f"result_{year_of_first_row}/load_pv_batt_result_{install_cap}.txt"
+        )
+        original_stdout = sys.stdout
+        with open(report_path, "w", encoding="utf-8") as report_file:
+            sys.stdout = report_file
+            try:
+                summary = evaluate_case(df_pv, df_load, install_cap)
+            finally:
+                sys.stdout = original_stdout
+        summaries.append(summary)
+        print(
+            f"Completed {install_cap:,.0f} kWp: "
+            f"system bill {summary['bill']['system_total']:,.2f} THB, "
+            f"savings {summary['bill']['savings']:,.2f} THB"
+        )
+
+    print("Done. Capacities loaded from solar_pv.install_capacities_kwp.")
+
+
+if __name__ == "__main__":
+    main()
