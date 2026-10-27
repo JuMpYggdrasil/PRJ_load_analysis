@@ -2,11 +2,13 @@ import json
 import os
 import sys
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from battery_controllers import build_controller
 from energy_system import (
+    build_reopt_dispatch_table,
     calculate_bill,
     calculate_metrics,
     daily_pv_surplus_kwh,
@@ -341,6 +343,102 @@ def plot_monthly_profiles(result, pv_install_capacity):
         plt.close(figure)
 
 
+def plot_monthly_dispatch(result, pv_install_capacity):
+    data = result.data
+    for month in range(1, 13):
+        month_data = data[data.index.month == month]
+        if month_data.empty:
+            continue
+
+        figure, axis = plt.subplots(figsize=(14, 6))
+        soc_axis = axis.twinx()
+        timestamps = month_data.index
+
+        axis.stackplot(
+            timestamps,
+            month_data["load_from_grid_kw"],
+            month_data["pv_to_load_kw"],
+            month_data["batt_to_load_kw"],
+            labels=[
+                "Grid serving load",
+                "PV serving load",
+                "Battery discharging",
+            ],
+            colors=["#9e9e9e", "#f2c14e", "#4c78a8"],
+            alpha=0.75,
+        )
+        axis.stackplot(
+            timestamps,
+            -(month_data["pv_to_batt_kw"] + month_data["grid_to_batt_kw"]),
+            -month_data["pv_export_kw"],
+            -month_data["batt_export_kw"],
+            -month_data["pv_curtailed_kw"],
+            labels=[
+                "Battery charging (PV + grid)",
+                "PV export",
+                "Battery export",
+                "PV curtailed",
+            ],
+            colors=["#8ecae6", "#90be6d", "#577590", "#bdbdbd"],
+            alpha=0.65,
+        )
+        axis.plot(
+            timestamps,
+            month_data["load_kw"],
+            color="black",
+            linewidth=1.6,
+            label="Load",
+        )
+        axis.axhline(0, color="black", linewidth=0.8)
+        axis.set_xlabel("Timestamp")
+        axis.set_ylabel("Power (kW)")
+        axis.set_title(
+            f"System Dispatch ({pv_install_capacity:,.0f} kWp) "
+            f"{month_name[month]}"
+        )
+        axis.grid(True, alpha=0.3)
+        axis.xaxis.set_major_locator(mdates.DayLocator(interval=5))
+        axis.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+        axis.set_xlim(month_data.index[0], month_data.index[-1])
+
+        handles, labels = axis.get_legend_handles_labels()
+        if result.battery is not None:
+            soc_axis.plot(
+                timestamps,
+                month_data["batt_soc_percent"],
+                color="#e45756",
+                linestyle="--",
+                linewidth=1.2,
+                label="Battery SOC",
+            )
+            soc_axis.set_ylabel("Battery SOC (%)")
+            soc_axis.set_ylim(0, 100)
+            soc_axis.set_zorder(axis.get_zorder() + 1)
+            soc_axis.patch.set_visible(False)
+            soc_handles, soc_labels = soc_axis.get_legend_handles_labels()
+            handles += soc_handles
+            labels += soc_labels
+        else:
+            soc_axis.set_visible(False)
+
+        axis.legend(
+            handles,
+            labels,
+            loc="upper left",
+            fontsize=7,
+            ncol=2,
+            framealpha=0.85,
+        )
+        figure.tight_layout()
+        figure.savefig(
+            f"result_{year_of_first_row}/"
+            f"system_dispatch_{pv_install_capacity:,.0f}kWp_"
+            f"{month}_{month_name[month]}.png",
+            format="png",
+        )
+        plt.close(figure)
+
+
 def plot_average_profile(result, average_profile, pv_install_capacity):
     figure, axis = plt.subplots(figsize=(12, 6))
     axis.plot(
@@ -533,6 +631,12 @@ def save_case_outputs(
         f"Saved hourly averages -> result_{year_of_first_row}/"
         f"average_load_pv_profile_{pv_install_capacity:,.0f}kWp.csv"
     )
+    dispatch_path = (
+        f"result_{year_of_first_row}/"
+        f"system_performance_dispatch_{pv_install_capacity:,.0f}kWp.csv"
+    )
+    build_reopt_dispatch_table(result).to_csv(dispatch_path, index=False)
+    print(f"Saved system dispatch -> {dispatch_path}")
 
     param_econ = {
         "installed_capacity": pv_install_capacity,
@@ -628,6 +732,7 @@ def evaluate_case(df_pv, df_load, pv_install_capacity):
         bill,
     )
     plot_monthly_profiles(result, pv_install_capacity)
+    plot_monthly_dispatch(result, pv_install_capacity)
     plot_average_profile(result, average_profile, pv_install_capacity)
     plot_battery_profiles(result, pv_install_capacity)
     plot_grid_profile(result, pv_install_capacity)

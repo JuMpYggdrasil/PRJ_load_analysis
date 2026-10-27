@@ -23,7 +23,7 @@ PRJ_load_analysis/
 |-- 2_exploratory_data_analysis.py
 |-- 3_load_clascify.py
 |-- 4_load_pv_batt.py          # Step 4 orchestration
-|-- energy_system.py           # Battery/SOC/grid simulation, metrics, bill
+|-- energy_system.py           # Battery/SOC/grid simulation, metrics, bill, dispatch table
 |-- battery_controllers.py     # Self-consumption, schedule, controller factory
 |-- custom_battery_controller.py  # Editable custom controller
 |-- PVGIS_TMY.py               # Legacy PVGIS TMY fetcher (imported, not called)
@@ -55,7 +55,7 @@ All intermediates go to `temporary/`. Results go to `result_<year>/` created fro
 | 1 | `source/iwrm/EnergyDayChartAll2022_edit.csv` | `temporary/dummy.csv`, `temporary/prepared_electric_load_data.csv`, `temporary/daily_peak_load_data.csv`, `temporary/montly_peak_load_data.csv`, `result_<year>/peak_day.png` |
 | 2 | `temporary/prepared_electric_load_data.csv` | `temporary/analyse_electric_load_data.csv`, EDA plots in `result_<year>/` |
 | 3 | `temporary/analyse_electric_load_data.csv` | `temporary/anual_electricity_base_price.json`, `temporary/weekdays_data.csv`, `temporary/weekends_data.csv`, `result_<year>/Energy consumption_result.txt`, TOU/LDC plots |
-| 4 | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, `config.json` | `solar_pattern.csv` (repo root), `temporary/pv_data_for_train_model.csv`, `temporary/param_for_economic.json` (JSON lines), `temporary/load_pv_profile_<capacity>kWp.csv`, `temporary/load_pv_profile.csv` (last capacity), `result_<year>/load_pv_batt_result_*.txt`, `result_<year>/average_load_pv_profile_*.csv`, PV/battery/grid plots |
+| 4 | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, `config.json` | `solar_pattern.csv` (repo root), `temporary/pv_data_for_train_model.csv`, `temporary/param_for_economic.json` (JSON lines), `temporary/load_pv_profile_<capacity>kWp.csv`, `temporary/load_pv_profile.csv` (last capacity), `result_<year>/load_pv_batt_result_*.txt`, `result_<year>/average_load_pv_profile_*.csv`, `result_<year>/system_performance_dispatch_*.csv`, `result_<year>/system_dispatch_*.png`, PV/battery/grid plots |
 
 ## Key conventions & gotchas
 - **Hardcoded paths**: Step 1 reads `source/iwrm/EnergyDayChartAll2022_edit.csv`. Update for other datasets.
@@ -73,6 +73,7 @@ All intermediates go to `temporary/`. Results go to `result_<year>/` created fro
 - **`temporary/` must already exist**: Step 4 no longer creates `temporary/`; run steps 1-3 first.
 - **Per-capacity outputs**: `temporary/load_pv_profile_<capacity>kWp.csv` is written for each configured capacity; the current config produces `load_pv_profile_100kWp.csv` and `load_pv_profile_500kWp.csv`. `temporary/load_pv_profile.csv` is overwritten by the last capacity and should not be used for comparisons.
 - **Average profiles**: `average_load_pv_profile_<capacity>kWp.csv` is written only for configured capacities. Step 4 does not delete outputs for capacities that are no longer configured, so check filenames against the current config and do not assume every `average_load_pv_profile_*.csv` belongs to the latest run.
+- **Dispatch outputs**: `system_performance_dispatch_<capacity>kWp.csv` mirrors the core REopt dispatch columns (load, grid/PV/battery serving load, charging, export, curtailment, SOC). `system_dispatch_<capacity>kWp_<month>_<Month>.png` shows monthly stacked dispatch in kW with SOC on a 0-100% secondary axis. The root `REopt System Performance Dispatch.csv` is a reference sample only and is not read by the pipeline.
 - **Holidays**: Step 4 reads `tariff.holidays` from `config.json` (2021-2024). Step 3 still has its own hardcoded PEA holiday list; update both for other years.
 - **Tariffs**: Default Roland (5.5 THB/kWh on/off peak, 74.14 THB/kW demand, 312.24 THB/month). Alternatives commented for >69kV/22-33kV.
 - **Plots**: Some plots use `plt.show()` (blocked in non-interactive). Set `MPLBACKEND=Agg` for headless runs.

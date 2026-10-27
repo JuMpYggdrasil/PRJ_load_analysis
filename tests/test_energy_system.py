@@ -5,6 +5,7 @@ import pandas as pd
 from battery_controllers import ScheduleController, SelfConsumptionController
 from energy_system import (
     BatterySpec,
+    build_reopt_dispatch_table,
     calculate_bill,
     calculate_metrics,
     simulate_system,
@@ -172,6 +173,95 @@ class EnergySystemTests(unittest.TestCase):
         self.assertAlmostEqual(metrics["batt_discharge_kwh"], 5.0)
         self.assertAlmostEqual(metrics["grid_import_kwh"], 163.0)
         self.assertAlmostEqual(weekend["batt_discharge_kw"].sum(), 0.0)
+
+    def test_reopt_dispatch_table_maps_columns_and_balances(self):
+        index = hourly_index()
+        load = constant_series(1.0, index)
+        pv = constant_series(0.0, index)
+        pv.iloc[6:18] = 2.0
+
+        result = simulate_system(load, pv, None, None, allow_export=True)
+        table = build_reopt_dispatch_table(result)
+
+        expected_columns = [
+            "Time Step",
+            "Time Stamp",
+            "BAU Electric Load (kW)",
+            "Total Electric Load (kW)",
+            "Grid Serving Load (kW)",
+            "PV Serving Load (kW)",
+            "Battery Discharging (kW)",
+            "PV Charging Battery (kW)",
+            "Grid Charging Battery (kW)",
+            "PV Exporting to Grid (kW)",
+            "PV Curtailed Generation (kW)",
+            "Battery Exporting to Grid (kW)",
+            "Battery State of Charge (%)",
+        ]
+        self.assertEqual(list(table.columns), expected_columns)
+        self.assertEqual(table["Time Step"].tolist(), list(range(1, 25)))
+        self.assertEqual(table["Time Stamp"].iloc[0], "2024-01-01 00:00:00")
+
+        supply = (
+            table["Grid Serving Load (kW)"]
+            + table["PV Serving Load (kW)"]
+            + table["Battery Discharging (kW)"]
+        )
+        self.assertLess(
+            (supply - table["Total Electric Load (kW)"]).abs().max(), 1e-9
+        )
+
+        pv_dispatch = (
+            table["PV Serving Load (kW)"]
+            + table["PV Charging Battery (kW)"]
+            + table["PV Exporting to Grid (kW)"]
+            + table["PV Curtailed Generation (kW)"]
+        )
+        self.assertLess(
+            abs(pv_dispatch.to_numpy() - pv.to_numpy()).max(), 1e-9
+        )
+        self.assertTrue(table["Battery State of Charge (%)"].eq(0).all())
+
+    def test_reopt_dispatch_table_maps_battery_flows(self):
+        index = hourly_index(periods=3)
+        load = pd.Series([3.0, 0.0, 2.0], index=index)
+        pv = pd.Series([0.0, 4.0, 0.0], index=index)
+        battery = BatterySpec(
+            capacity_kwh=2,
+            power_limit_kw=2,
+            depth_of_discharge=1.0,
+            charge_efficiency=1.0,
+            discharge_efficiency=1.0,
+            initial_soc_percent=0,
+        )
+
+        result = simulate_system(
+            load,
+            pv,
+            battery,
+            SelfConsumptionController(),
+            allow_export=True,
+        )
+        table = build_reopt_dispatch_table(result)
+
+        self.assertEqual(
+            table["Grid Serving Load (kW)"].tolist(), [3.0, 0.0, 0.0]
+        )
+        self.assertEqual(
+            table["PV Serving Load (kW)"].tolist(), [0.0, 0.0, 0.0]
+        )
+        self.assertEqual(
+            table["Battery Discharging (kW)"].tolist(), [0.0, 0.0, 2.0]
+        )
+        self.assertEqual(
+            table["PV Charging Battery (kW)"].tolist(), [0.0, 2.0, 0.0]
+        )
+        self.assertEqual(
+            table["PV Exporting to Grid (kW)"].tolist(), [0.0, 2.0, 0.0]
+        )
+        self.assertEqual(
+            table["Battery State of Charge (%)"].tolist(), [0.0, 100.0, 0.0]
+        )
 
     def test_bill_uses_grid_import_and_baseline(self):
         index = hourly_index()

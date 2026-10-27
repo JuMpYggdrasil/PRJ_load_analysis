@@ -107,7 +107,7 @@ PRJ_load_analysis/
 | 1 | `1_data_cleansing_aggregate.py` | `source/iwrm/EnergyDayChartAll2022_edit.csv` | `temporary/prepared_electric_load_data.csv`, daily/monthly peaks, `result_2022/peak_day.png` |
 | 2 | `2_exploratory_data_analysis.py` | `temporary/prepared_electric_load_data.csv` | `temporary/analyse_electric_load_data.csv` and EDA plots |
 | 3 | `3_load_clascify.py` | `temporary/analyse_electric_load_data.csv` | Tariff groups, price JSON, weekday/weekend CSVs, load-duration plots |
-| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, and `config.json` | `solar_pattern.csv` (root), PV/battery/grid results, SOC and bill/savings, `temporary/load_pv_profile_<capacity>kWp.csv`, `temporary/load_pv_profile.csv` |
+| 4 | `4_load_pv_batt.py` | `temporary/analyse_electric_load_data.csv`, `solar_1kW_<year>.csv`, and `config.json` | `solar_pattern.csv` (root), PV/battery/grid results, SOC and bill/savings, REopt-style dispatch CSV/plots, `temporary/load_pv_profile_<capacity>kWp.csv`, `temporary/load_pv_profile.csv` |
 
 ## Script Reference
 
@@ -284,8 +284,11 @@ Main outputs:
 - `temporary/load_pv_profile_<capacity>kWp.csv`
 - `temporary/load_pv_profile.csv` (last evaluated capacity)
 - `result_<year>/load_pv_batt_result_<capacity>.txt`
-- Monthly load/PV plots, average load/PV/grid plots, battery SOC/power plots, grid profile plots, and PV surplus percentile plots
+- Monthly load/PV plots, monthly dispatch plots, average load/PV/grid plots, battery SOC/power plots, grid profile plots, and PV surplus percentile plots
 - `result_<year>/average_load_pv_profile_<capacity>kWp.csv`
+- `result_<year>/system_performance_dispatch_<capacity>kWp.csv`
+
+The dispatch CSV follows the core REopt `System Performance Dispatch` columns: total load, grid/PV/battery serving load, PV/grid battery charging, PV/battery export, PV curtailment, and battery SOC. The monthly `system_dispatch_<capacity>kWp_<month>_<Month>.png` plots show load and source dispatch in kW with battery SOC on a secondary 0-100% axis. The root `REopt System Performance Dispatch.csv` is a reference sample only; step 4 does not read it.
 
 Old binary-search `average_load_pv_profile_*` files may still exist from earlier runs; step 4 no longer creates them.
 

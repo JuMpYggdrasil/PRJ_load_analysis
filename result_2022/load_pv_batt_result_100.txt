@@ -50,3 +50,4 @@ Savings: 741,473.82 THB (4.72 %)
 	ignore FT & vat
 
 Saved hourly averages -> result_2022/average_load_pv_profile_100kWp.csv
+Saved system dispatch -> result_2022/system_performance_dispatch_100kWp.csv

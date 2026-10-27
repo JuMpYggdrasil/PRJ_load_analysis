@@ -420,6 +420,28 @@ def simulate_system(
     )
 
 
+def build_reopt_dispatch_table(result: SystemResult) -> pd.DataFrame:
+    data = result.data
+    timestamps = pd.to_datetime(data.index)
+    return pd.DataFrame(
+        {
+            "Time Step": np.arange(1, len(data) + 1),
+            "Time Stamp": timestamps.strftime("%Y-%m-%d %H:%M:%S"),
+            "BAU Electric Load (kW)": data["load_kw"].to_numpy(),
+            "Total Electric Load (kW)": data["load_kw"].to_numpy(),
+            "Grid Serving Load (kW)": data["load_from_grid_kw"].to_numpy(),
+            "PV Serving Load (kW)": data["pv_to_load_kw"].to_numpy(),
+            "Battery Discharging (kW)": data["batt_to_load_kw"].to_numpy(),
+            "PV Charging Battery (kW)": data["pv_to_batt_kw"].to_numpy(),
+            "Grid Charging Battery (kW)": data["grid_to_batt_kw"].to_numpy(),
+            "PV Exporting to Grid (kW)": data["pv_export_kw"].to_numpy(),
+            "PV Curtailed Generation (kW)": data["pv_curtailed_kw"].to_numpy(),
+            "Battery Exporting to Grid (kW)": data["batt_export_kw"].to_numpy(),
+            "Battery State of Charge (%)": data["batt_soc_percent"].to_numpy(),
+        }
+    )
+
+
 def calculate_metrics(result: SystemResult) -> dict:
     data = result.data
     dt_hours = result.dt_hours

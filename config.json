@@ -1,6 +1,6 @@
 {
   "solar_pv": {
-    "install_capacities_kwp": [100, 500],
+    "install_capacities_kwp": [2000, 2714],
     "profile_template": "solar_1kW_{year}.csv",
     "tracking_profile_template": "solar_1kW_{year}_tracking.csv",
     "use_tracking": false,
@@ -18,10 +18,10 @@
     "enabled": true,
     "sizing_percentile": 0.6,
     "plot_percentiles": [0.4, 0.6, 0.8],
-    "capacity_kwh": null,
-    "power_limit_kw": 500,
-    "charge_power_kw": 20,
-    "discharge_power_kw": 20,
+    "capacity_kwh": 8166,
+    "power_limit_kw": 1119,
+    "charge_power_kw": 1119,
+    "discharge_power_kw": 1119,
     "depth_of_discharge": 0.8,
     "charge_efficiency": 0.95,
     "discharge_efficiency": 0.95,

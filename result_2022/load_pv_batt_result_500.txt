@@ -50,3 +50,4 @@ Savings: 2,591,665.46 THB (16.51 %)
 	ignore FT & vat
 
 Saved hourly averages -> result_2022/average_load_pv_profile_500kWp.csv
+Saved system dispatch -> result_2022/system_performance_dispatch_500kWp.csv
