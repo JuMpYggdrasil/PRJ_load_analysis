@@ -19,7 +19,7 @@
     "sizing_percentile": 0.6,
     "plot_percentiles": [0.4, 0.6, 0.8],
     "capacity_kwh": 8166,
-    "power_limit_kw": 1119,
+    "power_limit_kw": 1119,// use when charge_power_kw or discharge_power_kw are not specified
     "charge_power_kw": 1119,
     "discharge_power_kw": 1119,
     "depth_of_discharge": 0.8,
